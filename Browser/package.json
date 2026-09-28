@@ -1,0 +1,14 @@
+{
+  "name": "black-hole-webgpu",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node tools/build.mjs",
+    "start": "node tools/serve.mjs",
+    "test": "node tools/check-wgsl.mjs && node tests/native-fixture.mjs && node tests/wasm-core.mjs && node tests/renderer-host.mjs && node tests/renderer-capabilities.mjs && node tests/trace-queue.mjs && node tests/quality.mjs && node tests/camera-host.mjs && node tests/camera-invariants.mjs && node tests/shader-source.mjs && node tests/app-host.mjs && node tests/benchmark-host.mjs && node tests/report-identity.mjs",
+    "benchmark:cpu": "node tests/wasm-benchmark.mjs && node tools/benchmark-host.mjs",
+    "check:shaders": "node tools/check-wgsl.mjs"
+  },
+  "engines": {"node": ">=18"}
+}

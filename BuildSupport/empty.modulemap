@@ -1,0 +1,2 @@
+// Project-local workaround for duplicate SwiftBridging definitions in the
+// installed Command Line Tools. Used only through a compiler VFS overlay.

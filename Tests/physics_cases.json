@@ -1,0 +1,3410 @@
+{
+  "description": "Deterministic finite-radius ZAMO rays. Pixel coordinates are absolute centers; fov is vertical radians. diskOuter=0 disables disk. diskInner defaults to exact prograde ISCO. Includes critical shadow brackets, close observers, polar views, exact Lz=0 rays and rotated cameras.",
+  "cases": [
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0-x192.5-y96.5",
+      "spin": 0,
+      "pixel": [
+        192.5,
+        96.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0-x352.5-y96.5",
+      "spin": 0,
+      "pixel": [
+        352.5,
+        96.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0-x512.5-y96.5",
+      "spin": 0,
+      "pixel": [
+        512.5,
+        96.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0-x672.5-y96.5",
+      "spin": 0,
+      "pixel": [
+        672.5,
+        96.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0-x832.5-y96.5",
+      "spin": 0,
+      "pixel": [
+        832.5,
+        96.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0-x192.5-y192.5",
+      "spin": 0,
+      "pixel": [
+        192.5,
+        192.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0-x352.5-y192.5",
+      "spin": 0,
+      "pixel": [
+        352.5,
+        192.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0-x512.5-y192.5",
+      "spin": 0,
+      "pixel": [
+        512.5,
+        192.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0-x672.5-y192.5",
+      "spin": 0,
+      "pixel": [
+        672.5,
+        192.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0-x832.5-y192.5",
+      "spin": 0,
+      "pixel": [
+        832.5,
+        192.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0-x192.5-y288.5",
+      "spin": 0,
+      "pixel": [
+        192.5,
+        288.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0-x352.5-y288.5",
+      "spin": 0,
+      "pixel": [
+        352.5,
+        288.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0-x512.5-y288.5",
+      "spin": 0,
+      "pixel": [
+        512.5,
+        288.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0-x672.5-y288.5",
+      "spin": 0,
+      "pixel": [
+        672.5,
+        288.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0-x832.5-y288.5",
+      "spin": 0,
+      "pixel": [
+        832.5,
+        288.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0-x192.5-y384.5",
+      "spin": 0,
+      "pixel": [
+        192.5,
+        384.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0-x352.5-y384.5",
+      "spin": 0,
+      "pixel": [
+        352.5,
+        384.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0-x512.5-y384.5",
+      "spin": 0,
+      "pixel": [
+        512.5,
+        384.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0-x672.5-y384.5",
+      "spin": 0,
+      "pixel": [
+        672.5,
+        384.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0-x832.5-y384.5",
+      "spin": 0,
+      "pixel": [
+        832.5,
+        384.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0-x192.5-y480.5",
+      "spin": 0,
+      "pixel": [
+        192.5,
+        480.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0-x352.5-y480.5",
+      "spin": 0,
+      "pixel": [
+        352.5,
+        480.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0-x512.5-y480.5",
+      "spin": 0,
+      "pixel": [
+        512.5,
+        480.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0-x672.5-y480.5",
+      "spin": 0,
+      "pixel": [
+        672.5,
+        480.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0-x832.5-y480.5",
+      "spin": 0,
+      "pixel": [
+        832.5,
+        480.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0-x192.5-y576.5",
+      "spin": 0,
+      "pixel": [
+        192.5,
+        576.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0-x352.5-y576.5",
+      "spin": 0,
+      "pixel": [
+        352.5,
+        576.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0-x512.5-y576.5",
+      "spin": 0,
+      "pixel": [
+        512.5,
+        576.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0-x672.5-y576.5",
+      "spin": 0,
+      "pixel": [
+        672.5,
+        576.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0-x832.5-y576.5",
+      "spin": 0,
+      "pixel": [
+        832.5,
+        576.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.6-x192.5-y96.5",
+      "spin": 0.6,
+      "pixel": [
+        192.5,
+        96.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.6-x352.5-y96.5",
+      "spin": 0.6,
+      "pixel": [
+        352.5,
+        96.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.6-x512.5-y96.5",
+      "spin": 0.6,
+      "pixel": [
+        512.5,
+        96.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.6-x672.5-y96.5",
+      "spin": 0.6,
+      "pixel": [
+        672.5,
+        96.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.6-x832.5-y96.5",
+      "spin": 0.6,
+      "pixel": [
+        832.5,
+        96.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.6-x192.5-y192.5",
+      "spin": 0.6,
+      "pixel": [
+        192.5,
+        192.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.6-x352.5-y192.5",
+      "spin": 0.6,
+      "pixel": [
+        352.5,
+        192.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.6-x512.5-y192.5",
+      "spin": 0.6,
+      "pixel": [
+        512.5,
+        192.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.6-x672.5-y192.5",
+      "spin": 0.6,
+      "pixel": [
+        672.5,
+        192.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.6-x832.5-y192.5",
+      "spin": 0.6,
+      "pixel": [
+        832.5,
+        192.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.6-x192.5-y288.5",
+      "spin": 0.6,
+      "pixel": [
+        192.5,
+        288.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.6-x352.5-y288.5",
+      "spin": 0.6,
+      "pixel": [
+        352.5,
+        288.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.6-x512.5-y288.5",
+      "spin": 0.6,
+      "pixel": [
+        512.5,
+        288.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.6-x672.5-y288.5",
+      "spin": 0.6,
+      "pixel": [
+        672.5,
+        288.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.6-x832.5-y288.5",
+      "spin": 0.6,
+      "pixel": [
+        832.5,
+        288.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.6-x192.5-y384.5",
+      "spin": 0.6,
+      "pixel": [
+        192.5,
+        384.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.6-x352.5-y384.5",
+      "spin": 0.6,
+      "pixel": [
+        352.5,
+        384.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.6-x512.5-y384.5",
+      "spin": 0.6,
+      "pixel": [
+        512.5,
+        384.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.6-x672.5-y384.5",
+      "spin": 0.6,
+      "pixel": [
+        672.5,
+        384.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.6-x832.5-y384.5",
+      "spin": 0.6,
+      "pixel": [
+        832.5,
+        384.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.6-x192.5-y480.5",
+      "spin": 0.6,
+      "pixel": [
+        192.5,
+        480.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.6-x352.5-y480.5",
+      "spin": 0.6,
+      "pixel": [
+        352.5,
+        480.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.6-x512.5-y480.5",
+      "spin": 0.6,
+      "pixel": [
+        512.5,
+        480.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.6-x672.5-y480.5",
+      "spin": 0.6,
+      "pixel": [
+        672.5,
+        480.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.6-x832.5-y480.5",
+      "spin": 0.6,
+      "pixel": [
+        832.5,
+        480.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.6-x192.5-y576.5",
+      "spin": 0.6,
+      "pixel": [
+        192.5,
+        576.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.6-x352.5-y576.5",
+      "spin": 0.6,
+      "pixel": [
+        352.5,
+        576.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.6-x512.5-y576.5",
+      "spin": 0.6,
+      "pixel": [
+        512.5,
+        576.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.6-x672.5-y576.5",
+      "spin": 0.6,
+      "pixel": [
+        672.5,
+        576.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.6-x832.5-y576.5",
+      "spin": 0.6,
+      "pixel": [
+        832.5,
+        576.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.998-x192.5-y96.5",
+      "spin": 0.998,
+      "pixel": [
+        192.5,
+        96.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.998-x352.5-y96.5",
+      "spin": 0.998,
+      "pixel": [
+        352.5,
+        96.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.998-x512.5-y96.5",
+      "spin": 0.998,
+      "pixel": [
+        512.5,
+        96.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.998-x672.5-y96.5",
+      "spin": 0.998,
+      "pixel": [
+        672.5,
+        96.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.998-x832.5-y96.5",
+      "spin": 0.998,
+      "pixel": [
+        832.5,
+        96.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.998-x192.5-y192.5",
+      "spin": 0.998,
+      "pixel": [
+        192.5,
+        192.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.998-x352.5-y192.5",
+      "spin": 0.998,
+      "pixel": [
+        352.5,
+        192.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.998-x512.5-y192.5",
+      "spin": 0.998,
+      "pixel": [
+        512.5,
+        192.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.998-x672.5-y192.5",
+      "spin": 0.998,
+      "pixel": [
+        672.5,
+        192.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.998-x832.5-y192.5",
+      "spin": 0.998,
+      "pixel": [
+        832.5,
+        192.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.998-x192.5-y288.5",
+      "spin": 0.998,
+      "pixel": [
+        192.5,
+        288.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.998-x352.5-y288.5",
+      "spin": 0.998,
+      "pixel": [
+        352.5,
+        288.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.998-x512.5-y288.5",
+      "spin": 0.998,
+      "pixel": [
+        512.5,
+        288.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.998-x672.5-y288.5",
+      "spin": 0.998,
+      "pixel": [
+        672.5,
+        288.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.998-x832.5-y288.5",
+      "spin": 0.998,
+      "pixel": [
+        832.5,
+        288.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.998-x192.5-y384.5",
+      "spin": 0.998,
+      "pixel": [
+        192.5,
+        384.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.998-x352.5-y384.5",
+      "spin": 0.998,
+      "pixel": [
+        352.5,
+        384.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.998-x512.5-y384.5",
+      "spin": 0.998,
+      "pixel": [
+        512.5,
+        384.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.998-x672.5-y384.5",
+      "spin": 0.998,
+      "pixel": [
+        672.5,
+        384.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.998-x832.5-y384.5",
+      "spin": 0.998,
+      "pixel": [
+        832.5,
+        384.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.998-x192.5-y480.5",
+      "spin": 0.998,
+      "pixel": [
+        192.5,
+        480.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.998-x352.5-y480.5",
+      "spin": 0.998,
+      "pixel": [
+        352.5,
+        480.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.998-x512.5-y480.5",
+      "spin": 0.998,
+      "pixel": [
+        512.5,
+        480.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.998-x672.5-y480.5",
+      "spin": 0.998,
+      "pixel": [
+        672.5,
+        480.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.998-x832.5-y480.5",
+      "spin": 0.998,
+      "pixel": [
+        832.5,
+        480.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.998-x192.5-y576.5",
+      "spin": 0.998,
+      "pixel": [
+        192.5,
+        576.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.998-x352.5-y576.5",
+      "spin": 0.998,
+      "pixel": [
+        352.5,
+        576.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.998-x512.5-y576.5",
+      "spin": 0.998,
+      "pixel": [
+        512.5,
+        576.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.998-x672.5-y576.5",
+      "spin": 0.998,
+      "pixel": [
+        672.5,
+        576.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "a0.998-x832.5-y576.5",
+      "spin": 0.998,
+      "pixel": [
+        832.5,
+        576.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 0,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "vacuum-a0-x400.5",
+      "spin": 0,
+      "pixel": [
+        400.5,
+        300.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 0,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "vacuum-a0-x440.5",
+      "spin": 0,
+      "pixel": [
+        440.5,
+        300.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 0,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "vacuum-a0-x480.5",
+      "spin": 0,
+      "pixel": [
+        480.5,
+        300.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 0,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "vacuum-a0-x520.5",
+      "spin": 0,
+      "pixel": [
+        520.5,
+        300.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 0,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "vacuum-a0-x560.5",
+      "spin": 0,
+      "pixel": [
+        560.5,
+        300.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 0,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "vacuum-a0-x600.5",
+      "spin": 0,
+      "pixel": [
+        600.5,
+        300.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 0,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "vacuum-a0.6-x400.5",
+      "spin": 0.6,
+      "pixel": [
+        400.5,
+        300.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 0,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "vacuum-a0.6-x440.5",
+      "spin": 0.6,
+      "pixel": [
+        440.5,
+        300.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 0,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "vacuum-a0.6-x480.5",
+      "spin": 0.6,
+      "pixel": [
+        480.5,
+        300.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 0,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "vacuum-a0.6-x520.5",
+      "spin": 0.6,
+      "pixel": [
+        520.5,
+        300.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 0,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "vacuum-a0.6-x560.5",
+      "spin": 0.6,
+      "pixel": [
+        560.5,
+        300.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 0,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "vacuum-a0.6-x600.5",
+      "spin": 0.6,
+      "pixel": [
+        600.5,
+        300.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 0,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "vacuum-a0.998-x400.5",
+      "spin": 0.998,
+      "pixel": [
+        400.5,
+        300.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 0,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "vacuum-a0.998-x440.5",
+      "spin": 0.998,
+      "pixel": [
+        440.5,
+        300.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 0,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "vacuum-a0.998-x480.5",
+      "spin": 0.998,
+      "pixel": [
+        480.5,
+        300.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 0,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "vacuum-a0.998-x520.5",
+      "spin": 0.998,
+      "pixel": [
+        520.5,
+        300.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 0,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "vacuum-a0.998-x560.5",
+      "spin": 0.998,
+      "pixel": [
+        560.5,
+        300.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 0,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "vacuum-a0.998-x600.5",
+      "spin": 0.998,
+      "pixel": [
+        600.5,
+        300.5
+      ]
+    },
+    {
+      "cameraDistance": 12,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "spin": 0.998,
+      "id": "close-x280.5-y160.5",
+      "pixel": [
+        280.5,
+        160.5
+      ]
+    },
+    {
+      "cameraDistance": 12,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "spin": 0.998,
+      "id": "close-x440.5-y160.5",
+      "pixel": [
+        440.5,
+        160.5
+      ]
+    },
+    {
+      "cameraDistance": 12,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "spin": 0.998,
+      "id": "close-x512.5-y160.5",
+      "pixel": [
+        512.5,
+        160.5
+      ]
+    },
+    {
+      "cameraDistance": 12,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "spin": 0.998,
+      "id": "close-x620.5-y160.5",
+      "pixel": [
+        620.5,
+        160.5
+      ]
+    },
+    {
+      "cameraDistance": 12,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "spin": 0.998,
+      "id": "close-x790.5-y160.5",
+      "pixel": [
+        790.5,
+        160.5
+      ]
+    },
+    {
+      "cameraDistance": 12,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "spin": 0.998,
+      "id": "close-x280.5-y300.5",
+      "pixel": [
+        280.5,
+        300.5
+      ]
+    },
+    {
+      "cameraDistance": 12,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "spin": 0.998,
+      "id": "close-x440.5-y300.5",
+      "pixel": [
+        440.5,
+        300.5
+      ]
+    },
+    {
+      "cameraDistance": 12,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "spin": 0.998,
+      "id": "close-x512.5-y300.5",
+      "pixel": [
+        512.5,
+        300.5
+      ]
+    },
+    {
+      "cameraDistance": 12,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "spin": 0.998,
+      "id": "close-x620.5-y300.5",
+      "pixel": [
+        620.5,
+        300.5
+      ]
+    },
+    {
+      "cameraDistance": 12,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "spin": 0.998,
+      "id": "close-x790.5-y300.5",
+      "pixel": [
+        790.5,
+        300.5
+      ]
+    },
+    {
+      "cameraDistance": 12,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "spin": 0.998,
+      "id": "close-x280.5-y460.5",
+      "pixel": [
+        280.5,
+        460.5
+      ]
+    },
+    {
+      "cameraDistance": 12,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "spin": 0.998,
+      "id": "close-x440.5-y460.5",
+      "pixel": [
+        440.5,
+        460.5
+      ]
+    },
+    {
+      "cameraDistance": 12,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "spin": 0.998,
+      "id": "close-x512.5-y460.5",
+      "pixel": [
+        512.5,
+        460.5
+      ]
+    },
+    {
+      "cameraDistance": 12,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "spin": 0.998,
+      "id": "close-x620.5-y460.5",
+      "pixel": [
+        620.5,
+        460.5
+      ]
+    },
+    {
+      "cameraDistance": 12,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "spin": 0.998,
+      "id": "close-x790.5-y460.5",
+      "pixel": [
+        790.5,
+        460.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 1.4507963267948965,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "spin": 0.998,
+      "id": "pole-x280.5-y160.5",
+      "pixel": [
+        280.5,
+        160.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 1.4507963267948965,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "spin": 0.998,
+      "id": "pole-x440.5-y160.5",
+      "pixel": [
+        440.5,
+        160.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 1.4507963267948965,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "spin": 0.998,
+      "id": "pole-x512.5-y160.5",
+      "pixel": [
+        512.5,
+        160.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 1.4507963267948965,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "spin": 0.998,
+      "id": "pole-x620.5-y160.5",
+      "pixel": [
+        620.5,
+        160.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 1.4507963267948965,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "spin": 0.998,
+      "id": "pole-x790.5-y160.5",
+      "pixel": [
+        790.5,
+        160.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 1.4507963267948965,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "spin": 0.998,
+      "id": "pole-x280.5-y300.5",
+      "pixel": [
+        280.5,
+        300.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 1.4507963267948965,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "spin": 0.998,
+      "id": "pole-x440.5-y300.5",
+      "pixel": [
+        440.5,
+        300.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 1.4507963267948965,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "spin": 0.998,
+      "id": "pole-x512.5-y300.5",
+      "pixel": [
+        512.5,
+        300.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 1.4507963267948965,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "spin": 0.998,
+      "id": "pole-x620.5-y300.5",
+      "pixel": [
+        620.5,
+        300.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 1.4507963267948965,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "spin": 0.998,
+      "id": "pole-x790.5-y300.5",
+      "pixel": [
+        790.5,
+        300.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 1.4507963267948965,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "spin": 0.998,
+      "id": "pole-x280.5-y460.5",
+      "pixel": [
+        280.5,
+        460.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 1.4507963267948965,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "spin": 0.998,
+      "id": "pole-x440.5-y460.5",
+      "pixel": [
+        440.5,
+        460.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 1.4507963267948965,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "spin": 0.998,
+      "id": "pole-x512.5-y460.5",
+      "pixel": [
+        512.5,
+        460.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 1.4507963267948965,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "spin": 0.998,
+      "id": "pole-x620.5-y460.5",
+      "pixel": [
+        620.5,
+        460.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 1.4507963267948965,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "spin": 0.998,
+      "id": "pole-x790.5-y460.5",
+      "pixel": [
+        790.5,
+        460.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "spin": 0.82,
+      "id": "look-x280.5-y160.5",
+      "lookYaw": 0.24,
+      "lookPitch": -0.1,
+      "pixel": [
+        280.5,
+        160.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "spin": 0.82,
+      "id": "look-x440.5-y160.5",
+      "lookYaw": 0.24,
+      "lookPitch": -0.1,
+      "pixel": [
+        440.5,
+        160.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "spin": 0.82,
+      "id": "look-x512.5-y160.5",
+      "lookYaw": 0.24,
+      "lookPitch": -0.1,
+      "pixel": [
+        512.5,
+        160.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "spin": 0.82,
+      "id": "look-x620.5-y160.5",
+      "lookYaw": 0.24,
+      "lookPitch": -0.1,
+      "pixel": [
+        620.5,
+        160.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "spin": 0.82,
+      "id": "look-x790.5-y160.5",
+      "lookYaw": 0.24,
+      "lookPitch": -0.1,
+      "pixel": [
+        790.5,
+        160.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "spin": 0.82,
+      "id": "look-x280.5-y300.5",
+      "lookYaw": 0.24,
+      "lookPitch": -0.1,
+      "pixel": [
+        280.5,
+        300.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "spin": 0.82,
+      "id": "look-x440.5-y300.5",
+      "lookYaw": 0.24,
+      "lookPitch": -0.1,
+      "pixel": [
+        440.5,
+        300.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "spin": 0.82,
+      "id": "look-x512.5-y300.5",
+      "lookYaw": 0.24,
+      "lookPitch": -0.1,
+      "pixel": [
+        512.5,
+        300.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "spin": 0.82,
+      "id": "look-x620.5-y300.5",
+      "lookYaw": 0.24,
+      "lookPitch": -0.1,
+      "pixel": [
+        620.5,
+        300.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "spin": 0.82,
+      "id": "look-x790.5-y300.5",
+      "lookYaw": 0.24,
+      "lookPitch": -0.1,
+      "pixel": [
+        790.5,
+        300.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "spin": 0.82,
+      "id": "look-x280.5-y460.5",
+      "lookYaw": 0.24,
+      "lookPitch": -0.1,
+      "pixel": [
+        280.5,
+        460.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "spin": 0.82,
+      "id": "look-x440.5-y460.5",
+      "lookYaw": 0.24,
+      "lookPitch": -0.1,
+      "pixel": [
+        440.5,
+        460.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "spin": 0.82,
+      "id": "look-x512.5-y460.5",
+      "lookYaw": 0.24,
+      "lookPitch": -0.1,
+      "pixel": [
+        512.5,
+        460.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "spin": 0.82,
+      "id": "look-x620.5-y460.5",
+      "lookYaw": 0.24,
+      "lookPitch": -0.1,
+      "pixel": [
+        620.5,
+        460.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "spin": 0.82,
+      "id": "look-x790.5-y460.5",
+      "lookYaw": 0.24,
+      "lookPitch": -0.1,
+      "pixel": [
+        790.5,
+        460.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "zero-xi-a0-y96.5",
+      "spin": 0,
+      "pixel": [
+        512,
+        96.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "zero-xi-a0-y192.5",
+      "spin": 0,
+      "pixel": [
+        512,
+        192.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "zero-xi-a0-y300.5",
+      "spin": 0,
+      "pixel": [
+        512,
+        300.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "zero-xi-a0-y480.5",
+      "spin": 0,
+      "pixel": [
+        512,
+        480.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "zero-xi-a0.6-y96.5",
+      "spin": 0.6,
+      "pixel": [
+        512,
+        96.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "zero-xi-a0.6-y192.5",
+      "spin": 0.6,
+      "pixel": [
+        512,
+        192.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "zero-xi-a0.6-y300.5",
+      "spin": 0.6,
+      "pixel": [
+        512,
+        300.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "zero-xi-a0.6-y480.5",
+      "spin": 0.6,
+      "pixel": [
+        512,
+        480.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "zero-xi-a0.998-y96.5",
+      "spin": 0.998,
+      "pixel": [
+        512,
+        96.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "zero-xi-a0.998-y192.5",
+      "spin": 0.998,
+      "pixel": [
+        512,
+        192.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "zero-xi-a0.998-y300.5",
+      "spin": 0.998,
+      "pixel": [
+        512,
+        300.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0.28,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 30,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "zero-xi-a0.998-y480.5",
+      "spin": 0.998,
+      "pixel": [
+        512,
+        480.5
+      ]
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 0,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "boundary-a0-sign-1-scale0.9999",
+      "spin": 0,
+      "pixel": [
+        397.0911667401723,
+        336
+      ],
+      "expectedStatus": 2
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 0,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "boundary-a0-sign-1-scale1.0001",
+      "spin": 0,
+      "pixel": [
+        397.06772131860464,
+        336
+      ],
+      "expectedStatus": 3
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 0,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "boundary-a0-sign1-scale0.9999",
+      "spin": 0,
+      "pixel": [
+        626.9088332598277,
+        336
+      ],
+      "expectedStatus": 2
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 0,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "boundary-a0-sign1-scale1.0001",
+      "spin": 0,
+      "pixel": [
+        626.9322786813954,
+        336
+      ],
+      "expectedStatus": 3
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 0,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "boundary-a0.6-sign-1-scale0.9999",
+      "spin": 0.6,
+      "pixel": [
+        427.5030672787566,
+        336
+      ],
+      "expectedStatus": 2
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 0,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "boundary-a0.6-sign-1-scale1.0001",
+      "spin": 0.6,
+      "pixel": [
+        427.48598107387227,
+        336
+      ],
+      "expectedStatus": 3
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 0,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "boundary-a0.6-sign1-scale0.9999",
+      "spin": 0.6,
+      "pixel": [
+        652.2947561049625,
+        336
+      ],
+      "expectedStatus": 2
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 0,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "boundary-a0.6-sign1-scale1.0001",
+      "spin": 0.6,
+      "pixel": [
+        652.3236528264329,
+        336
+      ],
+      "expectedStatus": 3
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 0,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "boundary-a0.998-sign-1-scale0.9999",
+      "spin": 0.998,
+      "pixel": [
+        465.72017521591334,
+        336
+      ],
+      "expectedStatus": 2
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 0,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "boundary-a0.998-sign-1-scale1.0001",
+      "spin": 0.998,
+      "pixel": [
+        465.71088734668695,
+        336
+      ],
+      "expectedStatus": 3
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 0,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "boundary-a0.998-sign1-scale0.9999",
+      "spin": 0.998,
+      "pixel": [
+        667.8899818656814,
+        336
+      ],
+      "expectedStatus": 2
+    },
+    {
+      "cameraDistance": 36,
+      "cameraPitch": 0,
+      "cameraYaw": 0.17,
+      "fov": 0.7853981633974483,
+      "resolution": [
+        1024,
+        672
+      ],
+      "diskOuter": 0,
+      "tolerance": 0.000002,
+      "steps": 8192,
+      "id": "boundary-a0.998-sign1-scale1.0001",
+      "spin": 0.998,
+      "pixel": [
+        667.9223052606351,
+        336
+      ],
+      "expectedStatus": 3
+    }
+  ]
+}

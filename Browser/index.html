@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#06080c">
+  <meta name="description" content="Real-time Kerr black hole simulator, compiled WebAssembly physics and WebGPU rendering.">
+  <title>Event Horizon · WebGPU</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <canvas id="universe" aria-label="Interactive Kerr black hole simulation" tabindex="0"></canvas>
+  <header id="toolbar">
+    <div class="brand"><span class="mark">◉</span><span>EVENT HORIZON<small>WEBASSEMBLY · WEBGPU</small></span></div>
+    <div class="actions">
+      <label class="compact">Quality<select id="quality"><option value="interactive" selected>Motion first</option><option value="auto">Auto detail</option><option value="efficient">Efficient</option><option value="cinematic">Cinematic</option><option value="max">Max fidelity</option></select></label>
+      <label class="compact">Appearance<select id="appearance"><option value="radiant">Radiant</option><option value="scientific">Scientific</option></select></label>
+      <button id="pause">Pause</button><button id="details" aria-expanded="false">Controls</button><button id="fullscreen">Full screen</button><button id="hudToggle" aria-pressed="true">HUD</button>
+    </div>
+  </header>
+  <div id="loading" role="status"><span class="spinner"></span><h1>Tracing the light</h1><p id="status">Loading the compiled physics core…</p><button id="retry" hidden>Retry WebGPU</button></div>
+  <aside id="hud" aria-live="off"><div id="device">Checking GPU…</div><div id="resolution">—</div><div id="timing">—</div><div id="workload">—</div><div id="physical">—</div><div id="numerical">—</div><div id="phase">—</div></aside>
+  <section id="panel" hidden aria-label="Simulation controls">
+    <h2>Light & motion</h2>
+    <label>Exposure <output id="exposureValue">+0.0 EV</output><input id="exposure" type="range" min="-4" max="4" step=".1" value="0"></label>
+    <label>Emission palette <output id="tintValue">6800 K</output><input id="tint" type="range" min="4000" max="11000" step="100" value="6800"></label>
+    <label>Material structure<input id="structure" type="range" min="0" max="1" step=".01" value=".9"></label>
+    <label>Lens glow<input id="glow" type="range" min="0" max=".5" step=".01" value="0"></label>
+    <label>Light fluctuations<input id="fluctuations" type="range" min="0" max=".2" step=".01" value="0"></label>
+    <label>Disk playback<select id="playback"><option value="1">1× real time</option><option value="100">100× time-lapse</option><option value="1000">1,000× time-lapse</option><option value="4000" selected>4,000× time-lapse</option></select></label>
+    <label class="check"><input id="rotate" type="checkbox" checked>Rotate emitting material</label>
+    <label class="check"><input id="camera" type="checkbox">Slow camera passage <small>Retraces the light paths</small></label>
+    <label class="check"><input id="energy" type="checkbox">Energy saver · 20 FPS</label>
+    <h2>Physical model</h2>
+    <label>Spin a/M <output id="spinValue">0.820</output><input id="spin" type="range" min="0" max=".998" step=".001" value=".82"></label>
+    <label>Mass<select id="mass"><option value="10000000">10⁷ solar masses</option><option value="100000000" selected>10⁸ solar masses</option><option value="1000000000">10⁹ solar masses</option></select></label>
+    <label>Accretion<select id="accretion"><option value=".001">0.001 M☉ / year</option><option value=".01">0.01 M☉ / year</option><option value=".1" selected>0.1 M☉ / year</option></select></label>
+    <label>Photosphere height <small>0 = thin disk</small><input id="thickness" type="range" min="0" max="1.5" step=".05" value="0"></label>
+    <label class="check"><input id="diagnostic" type="checkbox">Show unresolved rays in magenta</label>
+    <button id="reset">Reset camera</button>
+    <p class="fine">Motion first trades resolution and material detail for animation, using a thin disk and no glow by default. Kerr null geodesics · Page–Thorne disk · CIE color. Radiant adds a warm palette and prescribed material variation. The browser material is analytic; the native 2D fluid solve is not included.</p>
+  </section>
+  <footer><span>Drag to orbit · Right-drag to look · Scroll to zoom · WASDQE to fly</span><span>H hides the HUD · Space pauses · R resets</span></footer>
+  <section id="testResults" hidden><h2>Browser verification</h2><pre id="testLog"></pre><button id="testDownload" hidden>Download report</button><button id="testDone" hidden>Continue interactive view</button></section>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
