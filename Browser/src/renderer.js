@@ -13,7 +13,7 @@ export const modes = {
   auto:{steps:4096,tolerance:2e-6,maxStep:.025,samples:1,fps:60,pixels:1_500_000,traceBudget:800},
   efficient:{steps:2048,tolerance:3e-6,maxStep:.025,samples:1,fps:30,pixels:600_000,traceBudget:400},
   cinematic:{steps:4096,tolerance:8e-7,maxStep:.018,samples:2,fps:30,pixels:2_500_000,traceBudget:1800},
-  max:{steps:8192,tolerance:3e-7,maxStep:.012,samples:4,fps:60,pixels:8_294_400,traceBudget:5000,gpuBudgetFraction:.875},
+  max:{steps:8192,tolerance:3e-7,maxStep:.012,samples:4,fps:60,pixels:8_294_400,traceBudget:5000,gpuBudgetFraction:.875,maxScale:3},
 };
 
 /** WebAssembly owns f64 source physics; WebGPU owns transport and camera. */

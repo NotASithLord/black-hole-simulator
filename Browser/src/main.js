@@ -239,13 +239,15 @@ async function tick(now) {
         gpu:renderer.gpuTiming,completion:renderer.completionTiming,
         gpuBudgetFraction:s.energy ? .72 : modes[s.quality].gpuBudgetFraction});
       if(evidence) {
-        const next=adaptiveResolutionScale(scale,evidence.observedMS,evidence.budgetMS,.2,1,evidence.source,s.quality==='max'&&!s.energy);
+        const maximizeFidelity=s.quality==='max'&&!s.energy&&evidence.source==='gpu';
+        const maximumScale=maximizeFidelity?(modes[s.quality].maxScale??1):1;
+        const next=adaptiveResolutionScale(scale,evidence.observedMS,evidence.budgetMS,.2,maximumScale,evidence.source,maximizeFidelity);
         const d=dimensions(false,next,rayMapCalibrationRate);
         if(retracePolicy.consider({now:drawNow,generation:renderer.timingGeneration,evidence,
           current:renderer,next:d,traceMS:renderer.traceMS,
           // Conservative modes recover by only 3% in linear resolution. Their
           // ~6% pixel step still requires the same long upgrade dwell/evidence.
-          minimumPixelChange:s.quality==='max'&&!s.energy&&evidence.source==='gpu'?.15:.05})) {
+          minimumPixelChange:maximizeFidelity?.15:.05})) {
           scale=next;
           // This is a stationary resource change, not camera input. Preserve
           // the chosen four-sample map and never insert a tiny moving preview.

@@ -24,11 +24,17 @@ preview. This is deterministic host evidence, not an FPS benchmark. Real camera
 motion still requires new rays; a genuine map rebuild can still briefly pause
 animation. No transport equations, shader precision or shared Swift math changed.
 
-Validation: the full browser offline suite passes, including 74 quality-policy
-and 40 application-loop checks. Those two suites also pass under JavaScriptCore
+Validation: the full browser offline suite passes, including 87 quality-policy
+and 42 application-loop checks. Those two suites also pass under JavaScriptCore
 through Bun. Sparse timestamp simulations at 7.5–10 FPS retain overload recovery
 when evidence alternates between GPU timestamps and completed-frame cadence.
 These simulations are policy tests, not measurements of those browser engines.
+
+The repository merge retains bounded Max Fidelity supersampling from the newer
+GPU-scaling commits. It uses the stable controller above, not the superseded
+narrow utilization loop. Supersampling may exceed display resolution but cannot
+multiply the mode's pixel ceiling or calibrated tracing budget. Motion and energy
+saving retain their non-supersampled paths.
 
 ## Max Fidelity efficiency pass — 2026-09-29
 

@@ -21,6 +21,8 @@ Builds and opens `outputs/BlackHoleDesk.app`. The app is signed for local use, n
 
 ## Run in a browser
 
+Try the [public test version](https://black-hole-max-preview-20260929.arieldeschapell.chatgpt.site/).
+
 Requires Node.js 18+ and a browser with WebGPU and hardware acceleration:
 
 ```sh

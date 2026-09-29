@@ -257,4 +257,35 @@ for (let frame = 0; frame < 600; frame++) {
   if (now >= lowRateDeadline - 1) { lowRateFrames++; lowRateDeadline = advanceDeadline(now, lowRateDeadline, 50); }
 }
 check('Energy-saver 20FPS cadence selects one in three 60Hz frames', lowRateFrames === 200);
+const supersampledScale=(value,cost)=>adaptiveResolutionScale(value,cost,1000/60*.875,.2,3,'gpu',true);
+check('Stable Max GPU correction can grow useful detail above display resolution',supersampledScale(1,5)>1);
+check('Supersampled correction retains the stable timing-noise deadband',supersampledScale(1.5,1000/60*.85)===1.5);
+check('Supersampled correction backs off when genuinely overloaded',supersampledScale(2,22)<2);
+check('Stable GPU correction respects the supersampling ceiling',supersampledScale(3,1)===3);
+check('Supersampling correction ignores unavailable timestamps',supersampledScale(1,NaN)===1);
+const superSize=chooseRenderSize({width:400,height:300,mode:{...max,maxScale:3},scale:2,raysPerMS:100000});
+check('Max fidelity can supersample above display resolution',superSize.width>400&&superSize.height>300);
+const bounded=chooseRenderSize({width:400,height:300,mode:{...max,maxScale:3},scale:3,raysPerMS:100000,maxStorageBytes:1024*1024});
+check('Supersampling retains storage safety margin',bounded.width*bounded.height*64<=1024*1024*.9);
+const traceBounded=chooseRenderSize({width:400,height:300,mode:{...max,maxScale:3},scale:3,raysPerMS:100});
+check('Supersampling never multiplies the calibrated trace-time budget',pixels(traceBounded)<=100*max.traceBudget/max.samples);
+const modeBounded=chooseRenderSize({width:400,height:300,mode:{...max,pixels:180000,maxScale:3},scale:3,raysPerMS:100000});
+check('Supersampling never multiplies the mode pixel budget',pixels(modeBounded)<=180000);
+for(const policy of [{moving:true},{energy:true},{raysPerMS:0}]) {
+  const size=chooseRenderSize({width:400,height:300,mode:{...max,maxScale:3},scale:3,raysPerMS:100000,...policy});
+  check(`Supersampling remains disabled for ${Object.keys(policy)[0]}`,size.width<=400&&size.height<=300);
+}
+let supersamplingCases=0;
+for(const width of [80,400,1920])for(const height of [64,300,1080])for(const scale of [.5,1,1.5,3]) {
+  for(const rate of [0,100,1e5])for(const storage of [4096,1<<20,128<<20]) {
+    const mode={...max,maxScale:3,minimumPixels:4096};
+    const size=chooseRenderSize({width,height,mode,scale,raysPerMS:rate,maxStorageBytes:storage,maxTextureDimension:2048});
+    const budgetScale=Math.min(scale*scale,1);
+    assert.ok(fits(size,storage,2048));
+    assert.ok(pixels(size)<=Math.max(64,mode.pixels*budgetScale));
+    assert.ok(pixels(size)<=Math.max(64,(rate>0?rate*mode.traceBudget/mode.samples:mode.minimumPixels)*budgetScale));
+    supersamplingCases++;
+  }
+}
+check(`${supersamplingCases} supersampling combinations retain mode, trace-time, memory and texture bounds`,true);
 console.log(`${checks}/${checks} pure quality and pacing checks passed.`);

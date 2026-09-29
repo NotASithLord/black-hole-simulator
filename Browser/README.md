@@ -6,8 +6,9 @@ response execute on the GPU using WGSL compute and render passes.
 
 The default is **Max Fidelity**: tight Kerr integration tolerances, up to four
 cached rays per pixel, detailed rotating material and a 60 FPS target. Resolution
-adapts to the actual GPU, with up to 8.29 million pixels within viewport, memory
-and measured trace-time limits. With GPU timestamps, the controller targets 87.5%
+adapts to the actual GPU, with up to 8.29 million pixels within memory and
+measured trace-time limits. Stationary Max Fidelity can supersample above display
+resolution when measured GPU headroom permits. With GPU timestamps, the controller targets 87.5%
 of the frame interval for useful rendering work; this is not a measurement or
 guarantee of total-device GPU utilization. Smaller GPUs still scale down.
 
@@ -107,8 +108,10 @@ requires no host imports and performs no per-frame allocation or memory growth.
 | Max fidelity (default) | 8,192 | 4 | 60 FPS | 8.29 million |
 
 These are budgets and ceilings, not guaranteed frame rates or fixed render sizes.
-Internal resolution is constrained by the display, adapter storage limits and
-measured workload. Higher modes use tighter integration tolerances and more
+Internal resolution is constrained by adapter storage limits, pixel ceilings and
+measured workload. Stationary Max Fidelity can grow to three times the display's
+linear resolution, but never beyond its pixel or calibrated trace-time ceiling;
+camera motion and energy saving do not supersample. Higher modes use tighter integration tolerances and more
 spatial/material sampling. GPU timestamp measurements are used when supported;
 otherwise submission completion provides a broader timing estimate. Energy saver
 targets 20 FPS. Camera passage requires continuous retracing and is considerably

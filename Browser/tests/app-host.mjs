@@ -166,6 +166,29 @@ try {
   });
   completionCost=null;
 
+  // A small display can use genuine GPU headroom for bounded supersampling,
+  // without reverting to the remote branch's noisy per-window retrace loop.
+  innerWidth=400;innerHeight=300;
+  element('quality').value='max';element('quality').dispatch('change');
+  windowMock.dispatch('resize');await step(16);await step(300);
+  const beforeSupersampling=traceCalls.length;
+  gpuCost=gpuBudget*.5;
+  for(let frame=0;frame<850&&traceCalls.length===beforeSupersampling;frame++) await step(20);
+  const supersampledSize={width:renderer.width,height:renderer.height};
+  check('Sustained Max GPU headroom supersamples a small display through one stable four-sample replacement',()=>{
+    assert.equal(traceCalls.length,beforeSupersampling+1);
+    assert.ok(renderer.width>element('universe').width&&renderer.height>element('universe').height);
+    assert.equal(renderer.samples,4);
+    assert.ok(renderer.width*renderer.height<=2000*5000/4);
+  });
+  gpuCost=null;renderer.resetTiming();completionCost=1000/60;
+  for(let frame=0;frame<500;frame++) await step(20);
+  check('Stable completion fallback does not discard a supersampled map when timestamps temporarily disappear',()=>{
+    assert.equal(traceCalls.length,beforeSupersampling+1);
+    assert.equal(renderer.width,supersampledSize.width);assert.equal(renderer.height,supersampledSize.height);
+  });
+  completionCost=null;innerWidth=1280;innerHeight=800;
+
   // Exercise the existing lightweight alternative independently of the new
   // default; changing startup policy must not remove Motion-first behavior.
   element('quality').value='interactive';element('quality').dispatch('change');

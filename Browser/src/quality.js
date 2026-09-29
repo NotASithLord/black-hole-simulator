@@ -37,14 +37,19 @@ export function chooseRenderSize({
   const modePixels = calibrated && !moving && !energy
     ? Math.max(basePixels, finitePositive(mode.headroomPixels, basePixels))
     : basePixels;
-  const resolutionScale = clamp(finitePositive(scale, 1), 0.001, 1);
+  const maximumScale = calibrated && !moving && !energy ? finitePositive(mode.maxScale, 1) : 1;
+  const resolutionScale = clamp(finitePositive(scale, 1), 0.001, maximumScale);
+  const pixelScale = resolutionScale * resolutionScale;
+  // Supersampling may exceed the display size, never the mode's ray count or
+  // calibrated trace-time ceiling. Reduced resolution still lowers every cap.
+  const budgetScale = Math.min(pixelScale, 1);
   const desiredPixels = Math.min(
-    sourceWidth * sourceHeight,
-    modePixels,
-    measuredPixels,
-  ) * resolutionScale * resolutionScale;
+    sourceWidth * sourceHeight * pixelScale,
+    modePixels * budgetScale,
+    measuredPixels * budgetScale,
+  );
   const pixelLimit = Math.max(64, Math.min(memoryPixels, Math.floor(desiredPixels)));
-  const fit = Math.min(1, Math.sqrt(pixelLimit / (sourceWidth * sourceHeight)),
+  const fit = Math.min(maximumScale, Math.sqrt(pixelLimit / (sourceWidth * sourceHeight)),
     maximumAxis / sourceWidth, maximumAxis / sourceHeight);
   let renderWidth = Math.max(8, tileFloor(sourceWidth * fit));
   let renderHeight = Math.max(8, tileFloor(sourceHeight * fit));
