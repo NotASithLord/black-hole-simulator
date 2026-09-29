@@ -257,6 +257,34 @@ enum AppearanceValidation {
         report.check(brightnessError < 2e-5, "Artistic palette preserves physical received luminance and Doppler asymmetry", details: "maximum relative luminance error=\(brightnessError), maximum absolute difference=\(lostLuminance)")
 
         uniforms.materialStrength = settings.materialStrength; uniforms.flowEnabled = 1
+        // Exercise the production shader's adaptive shutter levels without
+        // changing the transfer map, source, fluid snapshot, or exposure width.
+        func shutterFrame(samples: UInt32, seconds: Float, appearance: UInt32 = 1) throws -> [SIMD4<Float>] {
+            var input = uniforms
+            input.materialTimeSamples = samples; input.materialShutterSeconds = seconds
+            input.appearanceMode = appearance
+            let command = queue.makeCommandBuffer()!
+            shade(command, input); _ = try finish(command)
+            return try read(radiance, device: device, queue: queue)
+        }
+        let shutterSeconds = Float(0.5 * settings.diskPlayback.rawValue / 60)
+        for sampleCount: UInt32 in [4, 8, 16] {
+            let pixels = try shutterFrame(samples: sampleCount, seconds: shutterSeconds)
+            report.check(pixels.allSatisfy { $0.x.isFinite && $0.y.isFinite && $0.z.isFinite && $0.w.isFinite } && pixels.contains { luminance($0) > 1e-5 },
+                         "\(sampleCount)-sample physical shutter integration is finite and visibly emitting")
+            let bounded = pixels.indices.allSatisfy { index in
+                let physicalY = exactY(physicalHDR[index])
+                return physicalY <= 1e-5 || exactY(pixels[index]) <= physicalY * 1.00002 + 1e-5
+            }
+            report.check(bounded, "\(sampleCount)-sample shutter preserves the physical disk-luminance bound")
+        }
+        let instantaneous4 = try shutterFrame(samples: 4, seconds: 0)
+        let instantaneous16 = try shutterFrame(samples: 16, seconds: 0)
+        report.check(bitwiseEqual(instantaneous4, instantaneous16), "Zero-width shutter bypasses extra samples bit-for-bit")
+        let scientific16 = try shutterFrame(samples: 16, seconds: shutterSeconds, appearance: 0)
+        report.check(bitwiseEqual(scientific16, physicalHDR), "Scientific transport bypasses photographic shutter controls bit-for-bit")
+
+        uniforms.materialTimeSamples = 4; uniforms.materialShutterSeconds = shutterSeconds
         var updateTimes = [Double](), radiantPixels = [SIMD4<Float>]()
         for frame in 0..<13 {
             let command = queue.makeCommandBuffer()!

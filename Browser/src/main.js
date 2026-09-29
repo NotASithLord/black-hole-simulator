@@ -1,5 +1,5 @@
 import {KerrRenderer,defaults,modes} from './renderer.js';
-import {chooseRenderSize,adaptiveResolutionScale,adaptiveTiming,advanceDeadline} from './quality.js';
+import {chooseRenderSize,adaptiveResolutionScale,adaptiveTiming,AdaptiveRetracePolicy,advanceDeadline} from './quality.js';
 import {runtimeInfo} from './diagnostics.js';
 
 const $=id=>document.getElementById(id), canvas=$('universe');
@@ -15,6 +15,8 @@ let pageVisible=!document.hidden;
 let verifying=false;
 let loopReady=false,tickRunning=false,frameRequest=null,refinementTimer=null;
 let calibrationRate=0,drag=null;const keys=new Set();
+let rayMapCalibrationRate=0,pendingQualitySize=null;
+const retracePolicy=new AdaptiveRetracePolicy();
 
 function lockVerificationInput(locked) {
   verifying=locked;keys.clear();drag=null;
@@ -47,6 +49,7 @@ function wake() {
     // Old GPU samples must not trigger a refinement loop after an idle period.
     renderer.resetTiming?.();
     lastTiming=renderer.timingSerial??0;lastAdapt=lastCameraTime;
+    retracePolicy.reset(lastCameraTime);
     nextFrame=0;
   }
   scheduleFrame();
@@ -90,7 +93,11 @@ renderer.onError=fail;
 window.addEventListener('error',e=>fail(e.error||e.message));
 window.addEventListener('unhandledrejection',e=>fail(e.reason));
 $('retry').onclick=()=>location.reload();
-function invalidate(hard=false) {revision++;if(hard) hardRevision++;dirty=true;refined=false;lastChange=performance.now();needsPresent=true;wake();}
+function invalidate(hard=false,interaction=true) {
+  revision++;if(hard) hardRevision++;dirty=true;refined=false;pendingQualitySize=null;
+  if(interaction) lastChange=performance.now();
+  needsPresent=true;wake();
+}
 function sizeCanvas() {
   const dpr=Math.min(devicePixelRatio||1,modes[s.quality].maxDPR??2),limit=renderer.device?.limits.maxTextureDimension2D||8192;
   const width=Math.min(limit,Math.max(8,Math.floor(innerWidth*dpr))),height=Math.min(limit,Math.max(8,Math.floor(innerHeight*dpr)));
@@ -100,8 +107,8 @@ function sizeCanvas() {
 function presentSize({width,height}) {
   if(canvas.width!==width||canvas.height!==height) {canvas.width=width;canvas.height=height;needsPresent=true;}
 }
-function dimensions(moving=false) {
-  return chooseRenderSize({...viewport,mode:modes[s.quality],raysPerMS:calibrationRate,moving,energy:s.energy,scale,
+function dimensions(moving=false,resolutionScale=scale,raysPerMS=calibrationRate) {
+  return chooseRenderSize({...viewport,mode:modes[s.quality],raysPerMS,moving,energy:s.energy,scale:resolutionScale,
     maxStorageBytes:renderer.device.limits.maxStorageBufferBindingSize,
     maxTextureDimension:renderer.device.limits.maxTextureDimension2D});
 }
@@ -176,7 +183,7 @@ function updateHUD(now) {
   $('device').textContent=info.description||[info.vendor,info.architecture].filter(Boolean).join(' · ')||'WebGPU hardware adapter';
   $('resolution').textContent=`${renderer.width} × ${renderer.height} · ${renderer.samples} rays/pixel · ${s.quality==='interactive'?'Motion first':s.quality}`;
   $('timing').textContent=`${fps.toFixed(0)} FPS · ${renderer.queries?renderer.gpuMS.toFixed(2)+' ms GPU':renderer.queueMS.toFixed(2)+' ms queue (estimated)'}`;
-  $('workload').textContent=`${(renderer.width*renderer.height*renderer.samples/1e6).toFixed(2)} M cached rays · last trace ${renderer.traceMS.toFixed(0)} ms`;
+  $('workload').textContent=`${(renderer.width*renderer.height*renderer.samples/1e6).toFixed(2)} M cached rays · last trace ${renderer.traceMS.toFixed(0)} ms · maps ${renderer.traceCount}`;
   $('physical').textContent=`a/M ${s.spin.toFixed(3)} · M ${(s.mass/1e8).toFixed(1)} × 10⁸ M☉ · ISCO ${renderer.meta[0].toFixed(3)} M`;
   $('numerical').textContent=`ε ${mode.tolerance.toExponential(0)} · ≤${mode.steps} steps · ${s.playback.toLocaleString()}× clock`;
   if(!busy) $('phase').textContent=paused?'Source paused':s.energy?'Energy saver · capped at 20 FPS':refined?'Ray map cached · source animating':'Interactive preview';
@@ -194,14 +201,24 @@ async function tick(now) {
     cameraMotion(Math.min(.1,elapsed));
     const moving=!!drag||keys.size>0||(s.passage&&!paused)||now-lastChange<250;
     if(dirty||(!moving&&!refined)) {
-      busy=true;const token=revision,hardToken=hardRevision;renderer.updateModel();const d=dimensions(moving);
+      busy=true;const token=revision,hardToken=hardRevision;renderer.updateModel();
+      const qualityOnly=!!pendingQualitySize&&!moving;
+      const sizingRate=qualityOnly?rayMapCalibrationRate:calibrationRate;
+      const d=qualityOnly?pendingQualitySize:dimensions(moving);
       // Finish one immutable low-resolution camera snapshot while drag input
       // continues. Cancel only incompatible model/layout changes, not every
       // pointer event; otherwise a moving camera never displays a new image.
       const complete=await renderer.rebuild(d.width,d.height,d.samples,p=>{$('phase').textContent=`Tracing ${Math.round(p*100)}% · ${d.width} × ${d.height}`;},()=>hardToken!==hardRevision||stopped||document.hidden);
       busy=false;if(!complete||hardToken!==hardRevision||stopped) return;
       dirty=token!==revision;refined=!moving&&!dirty;needsPresent=true;
-      calibrationRate=calibrationRate>0?calibrationRate*.7+renderer.raysPerMS*.3:renderer.raysPerMS;
+      if(!dirty) pendingQualitySize=null;
+      rayMapCalibrationRate=sizingRate;
+      // Resolution feedback must use the baseline that sized the current map,
+      // not a differently sized retrace's throughput; otherwise it moves its
+      // own target and can alternate between high and low resolutions forever.
+      if(!qualityOnly) calibrationRate=calibrationRate>0?calibrationRate*.7+renderer.raysPerMS*.3:renderer.raysPerMS;
+      retracePolicy.reset(performance.now());
+      lastAdapt=performance.now();lastTiming=renderer.timingSerial;
       if(modes[s.quality].lite) presentSize(d);
     }
     const interval=1000/(s.energy?20:modes[s.quality].fps);
@@ -219,12 +236,20 @@ async function tick(now) {
     // separately; cached shading must never masquerade as fresh-ray throughput.
     if(animated&&!moving&&drawNow-lastAdapt>1200&&renderer.timingSerial-lastTiming>=8) {
       const evidence=adaptiveTiming({now:drawNow,intervalMS:interval,generation:renderer.timingGeneration,
-        gpu:renderer.gpuTiming,completion:renderer.completionTiming});
+        gpu:renderer.gpuTiming,completion:renderer.completionTiming,
+        gpuBudgetFraction:s.energy ? .72 : modes[s.quality].gpuBudgetFraction});
       if(evidence) {
-        const next=adaptiveResolutionScale(scale,evidence.observedMS,evidence.budgetMS,.2,1,evidence.source);
-        if(Math.abs(next-scale)>.001) {
-          scale=next;const d=dimensions(false);
-          if(d.width!==renderer.width||d.height!==renderer.height) invalidate();
+        const next=adaptiveResolutionScale(scale,evidence.observedMS,evidence.budgetMS,.2,1,evidence.source,s.quality==='max'&&!s.energy);
+        const d=dimensions(false,next,rayMapCalibrationRate);
+        if(retracePolicy.consider({now:drawNow,generation:renderer.timingGeneration,evidence,
+          current:renderer,next:d,traceMS:renderer.traceMS,
+          // Conservative modes recover by only 3% in linear resolution. Their
+          // ~6% pixel step still requires the same long upgrade dwell/evidence.
+          minimumPixelChange:s.quality==='max'&&!s.energy&&evidence.source==='gpu'?.15:.05})) {
+          scale=next;
+          // This is a stationary resource change, not camera input. Preserve
+          // the chosen four-sample map and never insert a tiny moving preview.
+          invalidate(false,false);pendingQualitySize=d;
         }
         lastAdapt=drawNow;lastTiming=renderer.timingSerial;
       }

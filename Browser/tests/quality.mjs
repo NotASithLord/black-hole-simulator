@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { chooseRenderSize, adaptiveResolutionScale, adaptiveTiming, advanceDeadline } from '../src/quality.js';
+import { chooseRenderSize, adaptiveResolutionScale, adaptiveTiming, AdaptiveRetracePolicy, advanceDeadline } from '../src/quality.js';
 
 let checks = 0;
 function check(name, condition) { assert.ok(condition, name); checks++; console.log(`PASS ${name}`); }
@@ -124,9 +124,98 @@ const completion60 = { generation: 3, at: 9990, samples: 12, ms: 1000 / 60 };
 const fastGPU = adaptiveTiming({ ...timingContext, gpu: { generation: 3, at: 9980, ms: 5 }, completion: completion60, queueMS: 80 });
 check('Fresh GPU execution cost wins over pipeline completion latency', fastGPU.source === 'gpu' && fastGPU.observedMS === 5
   && adaptiveResolutionScale(1, fastGPU.observedMS, fastGPU.budgetMS) === 1);
+const maximumGPU = adaptiveTiming({ ...timingContext, gpuBudgetFraction: .875,
+  gpu: { generation: 3, at: 9980, ms: 5 } });
+check('Maximum fidelity budgets 87.5% of the target frame interval using execution evidence',
+  maximumGPU.source === 'gpu' && maximumGPU.budgetMS === timingContext.intervalMS * .875);
+check('Invalid or unbounded GPU budget requests preserve timing headroom',
+  adaptiveTiming({ ...timingContext, gpuBudgetFraction: Infinity, gpu: { generation: 3, at: 9980, ms: 5 } }).budgetMS === timingContext.intervalMS * .72
+  && adaptiveTiming({ ...timingContext, gpuBudgetFraction: 1, gpu: { generation: 3, at: 9980, ms: 5 } }).budgetMS === timingContext.intervalMS * .9);
+check('Maximum fidelity only grows resolution with clear GPU headroom',
+  adaptiveResolutionScale(.5, maximumGPU.budgetMS * .7, maximumGPU.budgetMS, .2, 1, 'gpu', true) > .5);
+check('Maximum fidelity tolerates ordinary timestamp noise instead of retracing to chase utilization',
+  [.76,.9,.99,1.01,1.11].every(fraction=>adaptiveResolutionScale(.5, maximumGPU.budgetMS * fraction, maximumGPU.budgetMS, .2, 1, 'gpu', true) === .5));
+check('Maximum fidelity does not infer headroom from completion-only throughput',
+  adaptiveResolutionScale(.5, 15, 16, .2, 1, 'throughput', true) === adaptiveResolutionScale(.5, 15, 16));
+let fullBudgetCases = 0;
+for (const costAtFullSize of [16, 20, 40, 100, 300]) for (const initial of [.2, .5, 1]) {
+  let value = initial;
+  for (let step = 0; step < 100; step++) {
+    const previous = value;
+    value = adaptiveResolutionScale(value, costAtFullSize * value ** 2, maximumGPU.budgetMS, .2, 1, 'gpu', true);
+    assert.ok(value >= .2 && value <= 1);
+    assert.ok(value <= previous * 1.1 + 1e-12);
+  }
+  const measuredFraction = costAtFullSize * value ** 2 / timingContext.intervalMS;
+  assert.ok(measuredFraction >= .65 && measuredFraction <= .98);
+  fullBudgetCases++;
+}
+check(`${fullBudgetCases} synthetic Max-fidelity workloads settle within their stable execution-time band`, true);
+
+const retrace=new AdaptiveRetracePolicy();
+const map={width:800,height:600,samples:4};
+const candidate={width:880,height:656,samples:4};
+const headroom={observedMS:5,budgetMS:15,source:'gpu'};
+const retraceRequest={generation:1,evidence:headroom,current:map,next:candidate};
+const consider=(request)=>retrace.consider({...request,evidence:{...request.evidence,at:request.evidence.at??request.now}});
+check('Cached-map adaptation waits for independent sustained timing windows',
+  !consider({...retraceRequest,now:1000})&&!consider({...retraceRequest,now:1500})
+  &&!consider({...retraceRequest,now:2200})&&!consider({...retraceRequest,now:3400}));
+for(let now=4600;now<15000;now+=1200) assert.equal(consider({...retraceRequest,now}),false);
+check('A useful cached-map upgrade waits at least fifteen seconds before spending trace work',consider({...retraceRequest,now:15400}));
+retrace.reset(16000);
+const expensive={...retraceRequest,traceMS:4000};
+for(let now=17200;now<64000;now+=1200) assert.equal(consider({...expensive,now}),false);
+check('Expensive maps must amortize the previous trace before an upgrade',consider({...expensive,now:65200}));
+retrace.reset(0);
+const smallerMap={width:600,height:448,samples:4};
+const overload={...retraceRequest,next:smallerMap,evidence:{observedMS:30,budgetMS:15,source:'gpu'}};
+check('One overload window cannot discard a stable ray map',!consider({...overload,now:20000}));
+check('Changed workload generations discard earlier adaptation votes',!consider({...overload,now:21200,generation:2})
+  &&!consider({...overload,now:22400,generation:2})&&consider({...overload,now:23600,generation:2}));
+retrace.reset(0);
+check('Quantized pixel changes below fifteen percent do not buy an expensive retrace',
+  !consider({...retraceRequest,now:20000,next:{width:816,height:608,samples:4}}));
+check('Adaptation never requests a lower-sample interactive preview for a stationary scene',
+  !consider({...overload,now:21200,next:{...smallerMap,samples:1}}));
+check('A changed calibration baseline cannot reverse the requested timing correction',
+  !consider({...retraceRequest,now:22400,next:smallerMap}));
+retrace.reset(0);
+for(const now of [20000,21200]) assert.equal(consider({...overload,now}),false);
+check('A long evidence gap discards stale adaptation votes',!consider({...overload,now:28000}));
+for(const source of ['gpu','throughput']) {
+  retrace.reset(0);
+  const request={...overload,evidence:{...overload.evidence,source,at:20000}};
+  assert.equal(consider({...request,now:20000}),false);
+  assert.equal(consider({...request,now:21200}),false);
+  assert.equal(retrace.count,1);
+  check(`The same ${source} timing sample cannot vote twice even 1.2 seconds later`,true);
+}
+retrace.reset(0);
+const conservativeUpgrade={...retraceRequest,next:{width:824,height:616,samples:4},minimumPixelChange:.05};
+for(const now of [20000,21200,22400]) assert.equal(consider({...conservativeUpgrade,now}),false);
+check('Conservative three-percent linear recovery remains possible after sustained headroom and dwell',
+  consider({...conservativeUpgrade,now:23600}));
+retrace.reset(0);
+check('Conservative recovery threshold never permits tiny overload reductions',
+  !consider({...overload,minimumPixelChange:.05,next:{width:784,height:568,samples:4},now:20000}));
+for(const timestampPeriod of [3000,3600,3750,4000]) {
+  retrace.reset(0);
+  let approvals=0;
+  for(let now=1210;now<=120000;now+=1210) {
+    const cost=timestampPeriod/30;
+    const evidence=adaptiveTiming({generation:1,now,intervalMS:1000/60,gpuBudgetFraction:.875,
+      gpu:{generation:1,at:Math.floor(now/timestampPeriod)*timestampPeriod,ms:cost},
+      completion:{generation:1,at:now,ms:cost,samples:12}});
+    if(retrace.consider({...overload,now,evidence})) approvals++;
+  }
+  check(`Sustained ${(30000/timestampPeriod).toFixed(1)} FPS overload can shrink despite sparse GPU timestamps and fallback switching`,approvals>0);
+}
 const steady60 = adaptiveTiming({ ...timingContext, completion: completion60 });
 check('Timestamp-free 60FPS completion throughput keeps full-frame budget', steady60.source === 'throughput'
   && adaptiveResolutionScale(1, steady60.observedMS, steady60.budgetMS) === 1);
+check('Max-fidelity timing fraction never discounts timestamp-free completion cadence',
+  adaptiveTiming({ ...timingContext, gpuBudgetFraction: .875, completion: completion60 }).budgetMS === timingContext.intervalMS);
 const steady20 = adaptiveTiming({ ...timingContext, intervalMS: 50, completion: { generation: 3, at: 9990, samples: 10, ms: 50 } });
 check('Deliberately capped 20FPS is not mistaken for GPU overload', adaptiveResolutionScale(1, steady20.observedMS, steady20.budgetMS) === 1);
 const slowFrames = adaptiveTiming({ ...timingContext, completion: { generation: 3, at: 9990, samples: 10, ms: 25 } });

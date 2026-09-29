@@ -8,7 +8,7 @@ const names=['document','window','location','innerWidth','innerHeight','devicePi
 const saved=new Map(names.map(name=>[name,Object.getOwnPropertyDescriptor(globalThis,name)]));
 const methods=['init','updateModel','rebuild','render'];
 const originals=new Map(methods.map(name=>[name,KerrRenderer.prototype[name]]));
-let now=1000,renderer,holdNextTrace=false,pendingTrace,traceRate=2000;
+let now=1000,renderer,holdNextTrace=false,pendingTrace,traceRate=2000,gpuCost=null,completionCost=null;
 const raf=[],timers=new Map(),renderCalls=[],traceCalls=[],clockCalls=[];
 let scheduledID=0;
 let passed=0;
@@ -58,6 +58,7 @@ KerrRenderer.prototype.init=async function(){
 };
 KerrRenderer.prototype.updateModel=function(){};
 KerrRenderer.prototype.rebuild=async function(width,height,samples=1,progress=()=>{},cancel=()=>false){
+  this.resetTiming();
   const call={width,height,samples,cancel,cameraYaw:this.settings.cameraYaw};traceCalls.push(call);
   this.width=width;this.height=height;this.samples=samples;
   if(holdNextTrace){
@@ -71,7 +72,15 @@ KerrRenderer.prototype.rebuild=async function(width,height,samples=1,progress=()
   progress(1);return true;
 };
 KerrRenderer.prototype.render=async function(time,options){
-  renderCalls.push({time,options,quality:this.settings.quality});this.frame++;return 0.5;
+  renderCalls.push({time,options,quality:this.settings.quality});this.frame++;
+  if(gpuCost!==null) {
+    this.timingSerial++;this.gpuMS=typeof gpuCost==='function'?gpuCost():gpuCost;
+    this.gpuTiming={ms:this.gpuMS,generation:this.timingGeneration,at:now};
+  } else if(completionCost!==null) {
+    this.timingSerial++;
+    this.completionTiming={ms:completionCost,samples:12,generation:this.timingGeneration,at:now};
+  }
+  return 0.5;
 };
 
 function advanceTime(elapsed){
@@ -89,19 +98,82 @@ function move(x,y=100){element('universe').dispatch('pointermove',{clientX:x,cli
 try {
   await import('../src/main.js');
   await flush();
-  check('Motion-first startup calibrates, presents, and schedules the interactive loop',()=>{
-    assert.equal(renderer.settings.quality,'interactive');assert.equal(renderer.settings.glowStrength,0);
+  check('Max-fidelity startup calibrates, presents, and schedules the interactive loop',()=>{
+    assert.equal(renderer.settings.quality,'max');assert.equal(renderer.settings.glowStrength,0);
     assert.equal(traceCalls.length,1);assert.equal(renderCalls.length,1);assert.equal(raf.length,1);
     assert.equal(element('loading').hidden,true);
-    assert.ok(element('universe').width*element('universe').height<=32768);
+    assert.ok(traceCalls[0].width*traceCalls[0].height<=32768);
+    assert.equal(element('universe').width,2560);assert.equal(element('universe').height,1600);
   });
-  await step(16);await step(16);
-  check('Interactive frames submit without a per-frame CPU/GPU wait',()=>{
+  await step(16);await step(300);
+  check('Max-fidelity frames keep four rays and submit without a per-frame CPU/GPU wait',()=>{
     assert.ok(renderCalls.length>=3);
     assert.ok(renderCalls.slice(1).every(call=>call.options?.wait===false));
+    assert.equal(renderer.samples,4);
+    assert.ok(renderer.width*renderer.height<=128*1024*1024*.9/(4*16));
+    assert.equal(element('universe').width,2560);assert.equal(element('universe').height,1600);
+  });
+
+  const gpuBudget=1000/60*.875;
+  const stationaryTraces=traceCalls.length;
+  const stationarySize={width:renderer.width,height:renderer.height};
+  const noise=[.94,1.03,1.09,.98,.92,1.04,.91,1.11];
+  gpuCost=()=>gpuBudget*noise[Math.floor(now/1300)%noise.length];
+  for(let frame=0;frame<3000;frame++) await step(20);
+  check('Sixty seconds of noisy stationary GPU timings do not retrace or alternate preview and refined maps',()=>{
+    assert.equal(traceCalls.length,stationaryTraces);
+    assert.equal(renderer.width,stationarySize.width);assert.equal(renderer.height,stationarySize.height);
+    assert.equal(renderer.samples,4);
+  });
+  gpuCost=gpuBudget*3;traceRate=40_000;
+  for(let frame=0;frame<240&&traceCalls.length===stationaryTraces;frame++) await step(20);
+  const reducedSize={width:renderer.width,height:renderer.height};
+  check('Sustained real overload replaces a stationary map directly with one four-sample map',()=>{
+    assert.equal(traceCalls.length,stationaryTraces+1);
+    assert.equal(traceCalls.at(-1).samples,4);
+    assert.ok(reducedSize.width*reducedSize.height<stationarySize.width*stationarySize.height);
+  });
+  gpuCost=gpuBudget*.98;
+  for(let frame=0;frame<150;frame++) await step(20);
+  check('Quality replacement never publishes a moving preview or schedules a second refinement',()=>{
+    assert.equal(traceCalls.length,stationaryTraces+1);
+    assert.equal(renderer.samples,4);
+    assert.equal(renderer.width,reducedSize.width);assert.equal(renderer.height,reducedSize.height);
+  });
+  gpuCost=gpuBudget*.5;
+  for(let frame=0;frame<800&&traceCalls.length===stationaryTraces+1;frame++) await step(20);
+  check('Persistent spare GPU time makes one bounded upgrade using the same ray-map calibration baseline',()=>{
+    assert.equal(traceCalls.length,stationaryTraces+2);
+    assert.equal(renderer.samples,4);
+    const pixelRatio=renderer.width*renderer.height/(reducedSize.width*reducedSize.height);
+    assert.ok(pixelRatio>=1.15&&pixelRatio<1.25,`Expected a bounded ~21% pixel upgrade, got ${pixelRatio}`);
+    assert.ok(renderer.width*renderer.height<stationarySize.width*stationarySize.height);
+  });
+  gpuCost=null;traceRate=2000;renderer.resetTiming();
+  const beforeFallback=traceCalls.length;
+  completionCost=35;
+  for(let frame=0;frame<400&&traceCalls.length===beforeFallback;frame++) await step(20);
+  const fallbackSize={width:renderer.width,height:renderer.height};
+  check('Timestamp-free sustained completion overload still reduces a stationary map directly',()=>{
+    assert.equal(traceCalls.length,beforeFallback+1);assert.equal(renderer.samples,4);
+  });
+  completionCost=9;
+  for(let frame=0;frame<850&&traceCalls.length===beforeFallback+1;frame++) await step(20);
+  check('Timestamp-free conservative recovery can still upgrade after sustained headroom',()=>{
+    assert.equal(traceCalls.length,beforeFallback+2);assert.equal(renderer.samples,4);
+    const ratio=renderer.width*renderer.height/(fallbackSize.width*fallbackSize.height);
+    assert.ok(ratio>=1.05&&ratio<1.10,`Expected a bounded conservative pixel upgrade, got ${ratio}`);
+  });
+  completionCost=null;
+
+  // Exercise the existing lightweight alternative independently of the new
+  // default; changing startup policy must not remove Motion-first behavior.
+  element('quality').value='interactive';element('quality').dispatch('change');
+  await step(16);await step(300);
+  check('Motion first remains available with a one-sample inexpensive ray map',()=>{
+    assert.equal(renderer.settings.quality,'interactive');assert.equal(renderer.samples,1);
     assert.ok(renderer.width*renderer.height<=230400);
-    assert.equal(element('universe').width,renderer.width);
-    assert.equal(element('universe').height,renderer.height);
+    assert.equal(element('universe').width,renderer.width);assert.equal(element('universe').height,renderer.height);
   });
 
   element('universe').dispatch('pointerdown',{clientX:100,clientY:100,pointerId:1,button:0});

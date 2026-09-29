@@ -684,7 +684,8 @@ enum ShaderSource {
         // Eulerian fluid snapshot, camera, geometry and exact ray delay remain
         // fixed. This is not full spacetime/GRMHD motion blur.
         uint timeSamples=u.materialShutterSeconds>0. ?
-                         (u.materialTimeSamples>=4 ? 4u : (u.materialTimeSamples>=2 ? 2u : 1u)) : 1u;
+                         (u.materialTimeSamples>=16 ? 16u : (u.materialTimeSamples>=8 ? 8u :
+                         (u.materialTimeSamples>=4 ? 4u : (u.materialTimeSamples>=2 ? 2u : 1u)))) : 1u;
         float shutter=max(u.materialShutterSeconds,0.)/max(u.massTimeSeconds,1.e-6);
         float transmission=0.;
         for(uint sample=0;sample<timeSamples;sample++) {

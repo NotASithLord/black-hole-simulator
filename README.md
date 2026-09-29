@@ -4,7 +4,8 @@ A real-time black-hole simulator for macOS and the browser, with Kerr gravitatio
 lensing, an animated accretion disk and cinematic lighting.
 
 The native app uses Swift and Metal, including a desktop wallpaper mode. The browser
-version uses WebAssembly and WebGPU, with lightweight defaults and adaptive quality.
+version uses WebAssembly and WebGPU. Both start in Max Fidelity with adaptive GPU
+budgets; lower-cost modes and energy-saving controls remain available.
 Both compile the same [Swift physics core](Sources/BlackHolePhysics); the browser
 does not maintain a separate C implementation.
 

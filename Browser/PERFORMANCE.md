@@ -1,5 +1,77 @@
 # Source and cross-engine optimization review
 
+## Cached-animation stability correction — 2026-09-29
+
+The initial high-utilization pass exposed a control-loop regression: automatic
+quality changes called the same invalidation path as camera input, which caused
+a tiny one-ray moving preview followed by a second four-ray stationary build.
+The preview stayed on screen while tracing blocked animation. A narrow timing
+deadband repeatedly triggered this cycle from ordinary GPU timing variation.
+
+Quality-only changes now preserve stationary sampling and enqueue the exact
+chosen replacement dimensions directly. Their sizing calibration remains fixed
+instead of changing as the rebuild changes measured throughput. Cache replacements
+also require distinct, sustained timing evidence, a meaningful pixel difference
+and trace-cost-aware cooldown. The 87.5% execution budget remains a reference, not
+a requirement to discard a stable map whenever timing differs by a few percent.
+The HUD includes a map-build count so repeated rebuilding is visible.
+
+A regression test drives the actual application loop for sixty simulated seconds
+with noisy GPU timing: the old source creates seven maps instead of three, while
+the corrected source stays at its three startup maps. Sustained overload and
+recovery each replace the map once at four samples, without an intervening blurry
+preview. This is deterministic host evidence, not an FPS benchmark. Real camera
+motion still requires new rays; a genuine map rebuild can still briefly pause
+animation. No transport equations, shader precision or shared Swift math changed.
+
+Validation: the full browser offline suite passes, including 74 quality-policy
+and 40 application-loop checks. Those two suites also pass under JavaScriptCore
+through Bun. Sparse timestamp simulations at 7.5–10 FPS retain overload recovery
+when evidence alternates between GPU timestamps and completed-frame cadence.
+These simulations are policy tests, not measurements of those browser engines.
+
+## Max Fidelity efficiency pass — 2026-09-29
+
+Both targets default to Max Fidelity. The shared Swift equations, compiled WASM
+and browser transport shaders are unchanged. Independent review found no reason
+to replace the existing allocation-free numerical core or its lookup caches.
+
+- Native frame-loop cache keys are typed `Equatable` values rather than formatted
+  strings. The initial radial table is no longer rebuilt on the first frame.
+- Native foreground Max Fidelity uses a display-aware 87.5% GPU command-time
+  budget, with separate traced/cached feedback and caps that match submitted work.
+  Useful cached shutter integration can increase from four to eight or sixteen
+  samples without retracing the Kerr map. Physical equations and integration
+  tolerances are unchanged.
+- Browser Max Fidelity uses an 87.5% measured GPU frame-time reference,
+  workload-local timestamp smoothing and bounded resolution recovery. The original
+  narrow controller band was replaced by the stability policy above; smooth
+  cached animation takes priority over closely tracking utilization. These are
+  policy changes, not measured GPU utilization or frame-rate improvements.
+- The browser requests supported ray-map buffer limits up to 562.5 MiB instead
+  of an arbitrary 256 MiB cap, enough for the existing 4K/four-ray ceiling with
+  reserve. Requests do not allocate those buffers; viewport, calibration and
+  actual adapter limits still determine allocations.
+- Bounded queues, no-timestamp fallbacks, hidden/paused sleep, energy controls
+  and wallpaper throttling remain. Reaching the maximum useful workload may
+  legitimately leave the GPU below the target; no redundant work is injected.
+
+Metal command-buffer timings measure this app's GPU work ([Apple documentation](https://developer.apple.com/documentation/metal/mtlcommandbuffer/gpustarttime)).
+WebGPU timestamp queries are optional and precision-limited ([WebGPU specification](https://gpuweb.github.io/gpuweb/#timestamp)).
+Neither is an adapter-wide utilization counter. Actual browser/driver performance
+still needs live GPU measurements; offline tests do not establish that result.
+
+Validation: the full browser offline suite passes, including 57 quality-policy,
+52 capability/exception, 34 application-loop and 12 renderer-host checks. Native
+compilation, 53 deterministic quality checks and 32 production Metal appearance
+checks pass. The new 8/16-sample shutter paths remain finite and emitting; the
+Scientific and zero-width shutter bypasses remain bit-identical. An isolated
+Apple M4 test at 1440×960 with two cached geometry samples and four shutter samples
+measured a 3.77 ms median for fluid/material/camera work. This is not a before/after
+speedup or a measurement of the live adaptive renderer's utilization.
+
+## Previous review and migration
+
 2026-09-27 review; 2026-09-28 shared Swift migration · Apple M4 · macOS 26.6.2
 
 ## Shared Swift migration — 2026-09-28

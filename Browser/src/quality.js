@@ -60,18 +60,26 @@ export function chooseRenderSize({
 }
 
 /**
- * Fast overload correction in linear resolution, with restrained recovery.
- * Only actual GPU execution evidence may use the faster, 10% recovery path;
- * it requires >64% spare budget. Under a quadratic pixel-cost model the step
- * leaves >56% headroom; actual new cost must still be measured. Completion
- * cadence cannot prove that spare capacity.
+ * Bounded correction in linear resolution. Ordinary modes retain restrained
+ * recovery; Max fidelity spends clear GPU execution headroom on useful pixels.
+ * Both require measured execution evidence for faster recovery. Completion
+ * cadence cannot prove spare device time, so it keeps the conservative policy.
  */
-export function adaptiveResolutionScale(current, observedMS, budgetMS, minimum = 0.2, maximum = 1, timingSource = 'throughput') {
+export function adaptiveResolutionScale(current, observedMS, budgetMS, minimum = 0.2, maximum = 1, timingSource = 'throughput', maximizeFidelity = false) {
   if (!Number.isFinite(minimum) || minimum <= 0 || !Number.isFinite(maximum) || maximum < minimum) {
     throw new RangeError('Invalid adaptive resolution range.');
   }
   const value = clamp(finitePositive(current, maximum), minimum, maximum);
   if (!Number.isFinite(observedMS) || observedMS <= 0 || !Number.isFinite(budgetMS) || budgetMS <= 0) return value;
+  // A cached ray map can take seconds to replace. Chasing a narrow utilization
+  // band would sacrifice animation continuity for ordinary timestamp noise.
+  // Keep the execution-budget target, but act only on clear headroom/overload;
+  // the retrace policy below also requires sustained, materially useful change.
+  if (maximizeFidelity && timingSource === 'gpu') {
+    if (observedMS >= budgetMS * 0.75 && observedMS <= budgetMS * 1.12) return value;
+    const correction = Math.sqrt(budgetMS / observedMS);
+    return clamp(value * clamp(correction, 0.65, 1.10), minimum, maximum);
+  }
   if (observedMS > budgetMS * 1.12) {
     // Pixel cost scales approximately with the square of linear resolution.
     // Bound a correction to 15–35% to react promptly without collapsing detail.
@@ -86,6 +94,54 @@ export function adaptiveResolutionScale(current, observedMS, budgetMS, minimum =
     return clamp(value * factor, minimum, maximum);
   }
   return value;
+}
+
+/**
+ * A shading-cost correction is not itself permission to retrace expensive
+ * geometry. Require consecutive independent timing windows, a useful pixel
+ * difference and enough stable animation to amortize the last map build.
+ * Reset after a rebuild or an idle wake; never carry evidence across workloads.
+ */
+export class AdaptiveRetracePolicy {
+  constructor() { this.reset(0); }
+  reset(now) {
+    this.rebuiltAt=now;
+    this.generation=null;
+    this.direction=0;
+    this.count=0;
+    this.lastSampleAt=-Infinity;
+    this.lastEvidenceAt=-Infinity;
+  }
+  consider({now,generation,evidence,current,next,traceMS=0,minimumPixelChange=0.15}) {
+    if (!Number.isFinite(now)||!evidence||!Number.isFinite(evidence.at)||evidence.at>now||!current||!next) return false;
+    const currentPixels=current.width*current.height,nextPixels=next.width*next.height;
+    const ratio=nextPixels/currentPixels;
+    const direction=ratio<1?-1:1;
+    const threshold=clamp(finitePositive(minimumPixelChange,0.15),direction<0?0.15:0.05,0.5);
+    if (!Number.isFinite(ratio)||ratio<=0||current.samples!==next.samples||Math.abs(ratio-1)<threshold) {
+      this.count=0;this.direction=0;return false;
+    }
+    // Reject a proposed size that contradicts the measured shading correction.
+    // This also protects callers from accidentally changing its sizing baseline.
+    if ((direction<0&&evidence.observedMS<=evidence.budgetMS)
+      ||(direction>0&&evidence.observedMS>=evidence.budgetMS)) {
+      this.count=0;this.direction=0;return false;
+    }
+    if (generation!==this.generation||direction!==this.direction||now-this.lastSampleAt>3000) {
+      this.generation=generation;this.direction=direction;this.count=0;this.lastSampleAt=-Infinity;
+      this.lastEvidenceAt=-Infinity;
+    }
+    // Repeated frames from one evidence window cannot establish persistence.
+    // Timestamp queries are sparse at low FPS; fresh completion evidence may
+    // continue the same correction direction between GPU samples. Resetting on
+    // that source switch would prevent a severely overloaded map from shrinking.
+    if (now-this.lastSampleAt<1000||evidence.at<=this.lastEvidenceAt) return false;
+    this.lastSampleAt=now;this.lastEvidenceAt=evidence.at;this.count++;
+    const cost=Math.max(0,Number.isFinite(traceMS)?traceMS:0);
+    const cooldown=direction<0?Math.max(5000,Math.min(30000,cost*6))
+      :Math.max(15000,Math.min(60000,cost*12));
+    return this.count>=(direction<0?3:4)&&now-this.rebuiltAt>=cooldown;
+  }
 }
 
 /**
@@ -115,18 +171,20 @@ export function advanceDeadline(now, deadline, interval) {
  * All times are monotonic milliseconds; `at` is sample/window completion time.
  * Return null until current, sufficiently sampled evidence exists.
  */
-export function adaptiveTiming({ generation, now, intervalMS, gpu, completion, maxAgeMS = 2000 } = {}) {
+export function adaptiveTiming({ generation, now, intervalMS, gpu, completion, maxAgeMS = 2000, gpuBudgetFraction = 0.72 } = {}) {
   if (generation === undefined || generation === null || !Number.isFinite(now)
     || !Number.isFinite(intervalMS) || intervalMS <= 0 || !Number.isFinite(maxAgeMS) || maxAgeMS <= 0) return null;
   const fresh = sample => sample && sample.generation === generation && Number.isFinite(sample.at)
     && sample.at <= now && now - sample.at <= maxAgeMS;
   if (fresh(gpu) && Number.isFinite(gpu.ms) && gpu.ms > 0) {
-    return { observedMS: gpu.ms, budgetMS: intervalMS * 0.72, source: 'gpu' };
+    // Preserve safety headroom even if a caller supplies an invalid policy.
+    const fraction = clamp(finitePositive(gpuBudgetFraction, 0.72), 0.1, 0.9);
+    return { observedMS: gpu.ms, budgetMS: intervalMS * fraction, source: 'gpu', at: gpu.at };
   }
   if (fresh(completion) && Number.isInteger(completion.samples) && completion.samples >= 8
     && Number.isFinite(completion.ms) && completion.ms > 0
     && Number.isFinite(completion.ms * completion.samples) && completion.ms * completion.samples >= 100) {
-    return { observedMS: completion.ms, budgetMS: intervalMS, source: 'throughput' };
+    return { observedMS: completion.ms, budgetMS: intervalMS, source: 'throughput', at: completion.at };
   }
   return null;
 }

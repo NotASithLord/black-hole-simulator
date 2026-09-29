@@ -98,7 +98,7 @@ struct Uniforms {
     var materialTimeSamples: UInt32 = 1
 }
 
-struct CameraState {
+struct CameraState: Equatable {
     var yaw: Float = -0.28, pitch: Float = 0.06, radius: Float = 80, fov: Float = 0.48
     var lookYaw: Float = 0, lookPitch: Float = 0
     // Kept separate from the observer radius so manual dolly controls remain
@@ -107,6 +107,30 @@ struct CameraState {
 }
 
 final class BlackHoleRenderer: NSObject, MTKViewDelegate {
+    private struct IntegrationKey: Equatable {
+        let tolerance: Float
+        let maximumStep: Float
+        let steps: Int
+        let samples: Int
+        init(_ work: QualityWorkload) {
+            tolerance = work.tolerance; maximumStep = work.maxStep
+            steps = work.maxSteps; samples = work.samples
+        }
+    }
+    private struct HistoryKey: Equatable {
+        let width, height: Int
+        let camera: CameraState
+        let model: DiskModel
+        let integration: IntegrationKey
+        let diagnostic: Bool
+    }
+    private struct GeometryKey: Equatable {
+        let width, height: Int
+        let camera: CameraState
+        let spin, innerRadius, outerRadius, heightScale, corrugation: Float
+        let edgeSamples, edgeCapacity: UInt32
+        let integration: IntegrationKey
+    }
     weak var view: MTKView?
     var settings: RenderSettings {
         didSet {
@@ -131,17 +155,17 @@ final class BlackHoleRenderer: NSObject, MTKViewDelegate {
     private let telemetry: RenderTelemetry
     private var target: MTLTexture?
     private var geometry: MTLTexture?
-    private var geometryKey = ""
+    private var geometryKey: GeometryKey?
     private var histories: [MTLTexture] = []
     private var historyIndex = 0
     private var historyCount: UInt32 = 0
     private var renderedFrames: UInt32 = 0
-    private var historyKey = ""
+    private var historyKey: HistoryKey?
     private var radial: DiskRadialTable
     private var spectral: DiskSpectralTable
     private var radialBuffer: MTLBuffer
     private var spectralBuffer: MTLBuffer
-    private var modelKey = ""
+    private var modelKey: DiskModel
     private var camera = CameraState()
     private var keys = Set<UInt16>()
     private var quality = AdaptiveQuality()
@@ -167,6 +191,7 @@ final class BlackHoleRenderer: NSObject, MTKViewDelegate {
         self.device = device; self.queue = queue
         precondition(MemoryLayout<Uniforms>.stride == 176, "Metal/Swift uniform layout mismatch")
         let model = DiskModel(spin: Double(settings.blackHoleSpin), massSolar: settings.massSolar, accretionSolarMassesPerYear: settings.accretionSolarMassesPerYear, outerRadius: settings.diskOuterRadius)
+        modelKey = model
         radial = DiskPhysics.radialTable(for: model, count: 4096)
         spectral = DiskPhysics.spectralTable(count: 4096)
         radialBuffer = device.makeBuffer(bytes: radial.values, length: radial.values.count * 16, options: .storageModeShared)!
@@ -207,12 +232,15 @@ final class BlackHoleRenderer: NSObject, MTKViewDelegate {
 
     deinit { for observer in clockObservers { NotificationCenter.default.removeObserver(observer) } }
 
-    func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) { historyKey = "" }
+    func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) { historyKey = nil }
 
     func draw(in view: MTKView) {
         updateWindow(view)
         let constrained = ProcessInfo.processInfo.isLowPowerModeEnabled || ProcessInfo.processInfo.thermalState == .serious || ProcessInfo.processInfo.thermalState == .critical
-        quality.configure(mode: settings.quality, wallpaper: settings.wallpaperMode, constrained: constrained, appearance: settings.appearance)
+        let previousConfiguration = quality.configurationID
+        quality.configure(mode: settings.quality, wallpaper: settings.wallpaperMode, constrained: constrained,
+                          appearance: settings.appearance, refreshRate: view.window?.screen?.maximumFramesPerSecond ?? 60)
+        if quality.configurationID != previousConfiguration { cachedFrameCount = 0; lastTraceMS = 0 }
         view.preferredFramesPerSecond = settings.wallpaperMode && constrained ? 15 : quality.workload.fps
         let now = CACurrentMediaTime(); let elapsed = now-lastFrame
         let dt = Float(min(elapsed,1)); lastFrame = now
@@ -228,7 +256,7 @@ final class BlackHoleRenderer: NSObject, MTKViewDelegate {
         updateCamera(dt)
         guard inFlight.wait(timeout:.now()) == .success else { return }
         var committed = false
-        defer { if !committed { geometryKey = ""; inFlight.signal() } }
+        defer { if !committed { geometryKey = nil; inFlight.signal() } }
         guard let drawable = view.currentDrawable, let pass = view.currentRenderPassDescriptor else { return }
         updateDisk()
         var work = quality.workload
@@ -247,13 +275,14 @@ final class BlackHoleRenderer: NSObject, MTKViewDelegate {
             descriptor.usage = [.shaderRead,.shaderWrite]; descriptor.storageMode = .private
             target = device.makeTexture(descriptor:descriptor)
             histories = (0..<2).compactMap { _ in device.makeTexture(descriptor:descriptor) }
-            historyKey = ""; geometryKey = ""
+            historyKey = nil; geometryKey = nil
         }
         guard let target, histories.count == 2 else { return }
         var uniforms = makeUniforms(width:width,height:height,work:work)
-        if edgeRefinement.prepare(width:width,height:height,samples:Int(uniforms.edgeSamples),capacity:Int(uniforms.edgeCapacity)) { geometryKey = "" }
+        if edgeRefinement.prepare(width:width,height:height,samples:Int(uniforms.edgeSamples),capacity:Int(uniforms.edgeCapacity)) { geometryKey = nil }
         let stable = !radiant && settings.progressive && !settings.cinematic && keys.isEmpty && settings.perturbationAmplitude == 0 && !settings.diagnosticMode
-        let key = "\(width),\(height),\(camera),\(modelKey),\(work.tolerance),\(work.maxStep),\(work.maxSteps),\(work.samples),\(settings.diagnosticMode)"
+        let key = HistoryKey(width: width, height: height, camera: camera, model: modelKey,
+                             integration: IntegrationKey(work), diagnostic: settings.diagnosticMode)
         if !stable || key != historyKey { historyCount = 0; historyKey = key }
         guard let cb = queue.makeCommandBuffer() else { return }
         cb.label = radiant ? "Cached Kerr + evolving disk + photographic response" : "Kerr geodesics + physical thermal disk"
@@ -265,12 +294,15 @@ final class BlackHoleRenderer: NSObject, MTKViewDelegate {
                 d.textureType = .type2DArray; d.pixelFormat = .rgba32Float
                 d.width = width; d.height = height; d.arrayLength = work.samples
                 d.usage = [.shaderRead,.shaderWrite]; d.storageMode = .private
-                geometry = device.makeTexture(descriptor: d); geometryKey = ""
+                geometry = device.makeTexture(descriptor: d); geometryKey = nil
             }
             guard let geometry else { return }
             // Camera + metric + source intersection boundary + accuracy fully
             // determine this transfer map. Material/exposure/time do not.
-            let transferKey = "\(width),\(height),\(camera),\(settings.blackHoleSpin),\(uniforms.diskInnerRadius),\(uniforms.diskOuterRadius),\(uniforms.diskHeightScale),\(uniforms.diskCorrugation),\(uniforms.edgeSamples),\(uniforms.edgeCapacity),\(work.tolerance),\(work.maxStep),\(work.maxSteps),\(work.samples)"
+            let transferKey = GeometryKey(width: width, height: height, camera: camera, spin: settings.blackHoleSpin,
+                innerRadius: uniforms.diskInnerRadius, outerRadius: uniforms.diskOuterRadius,
+                heightScale: uniforms.diskHeightScale, corrugation: uniforms.diskCorrugation,
+                edgeSamples: uniforms.edgeSamples, edgeCapacity: uniforms.edgeCapacity, integration: IntegrationKey(work))
             traced = transferKey != geometryKey
             if traced {
                 let e = cb.makeComputeCommandEncoder()!
@@ -323,6 +355,7 @@ final class BlackHoleRenderer: NSObject, MTKViewDelegate {
         render.drawPrimitives(type:.triangle,vertexStart:0,vertexCount:3); render.endEncoding(); cb.present(drawable)
         let semaphore = inFlight; let completedHistory = historyCount
         let diagnosticResult = diagnostics; let completedTrace = traced; let completedWork = work
+        let completedConfiguration = quality.configurationID
         let completedEdges = edgeCounter; let edgeCapacity = Int(uniforms.edgeCapacity); let edgeSamples = Int(uniforms.edgeSamples)
         cb.addCompletedHandler { [weak self] command in
             semaphore.signal()
@@ -339,7 +372,7 @@ final class BlackHoleRenderer: NSObject, MTKViewDelegate {
                 self?.telemetry.edgeSamples = edgeSamples
                 if let unresolved { self?.telemetry.unresolved = String(format:"%.4f%%",100*Double(unresolved)/Double(width*height)) }
                 if let invalid { self?.telemetry.nonfinite = invalid }
-                self?.completed(ms:duration,width:width,height:height,work:completedWork,history:completedHistory,traced:completedTrace,radiant:radiant,error:failure)
+                self?.completed(ms:duration,width:width,height:height,work:completedWork,history:completedHistory,traced:completedTrace,radiant:radiant,configuration:completedConfiguration,error:failure)
             }
         }
         pendingFlowElapsed = 0
@@ -351,9 +384,10 @@ final class BlackHoleRenderer: NSObject, MTKViewDelegate {
         encoder.dispatchThreads(.init(width:width,height:height,depth:1),threadsPerThreadgroup:.init(width:w,height:4,depth:1))
     }
     private func updateDisk() {
-        let key = "\(settings.blackHoleSpin),\(settings.massSolar),\(settings.accretionSolarMassesPerYear),\(settings.diskOuterRadius)"
+        let key = DiskModel(spin: Double(settings.blackHoleSpin), massSolar: settings.massSolar,
+                            accretionSolarMassesPerYear: settings.accretionSolarMassesPerYear, outerRadius: settings.diskOuterRadius)
         guard key != modelKey else { return }; modelKey = key
-        radial = DiskPhysics.radialTable(for:.init(spin:Double(settings.blackHoleSpin),massSolar:settings.massSolar,accretionSolarMassesPerYear:settings.accretionSolarMassesPerYear,outerRadius:settings.diskOuterRadius),count:4096)
+        radial = DiskPhysics.radialTable(for: key, count: 4096)
         radialBuffer = device.makeBuffer(bytes:radial.values,length:radial.values.count*16,options:.storageModeShared)!
     }
     private func makeUniforms(width:Int,height:Int,work:QualityWorkload)->Uniforms {
@@ -375,7 +409,7 @@ final class BlackHoleRenderer: NSObject, MTKViewDelegate {
         u.flowLogRadiusMin = log(u.diskInnerRadius); u.flowLogRadiusSpan = log(u.diskOuterRadius/u.diskInnerRadius)
         u.flowEnabled = settings.flowEnabled && settings.appearance == .radiant ? 1 : 0
         if settings.appearance == .radiant && settings.diskRotation {
-            u.materialTimeSamples = settings.wallpaperMode || settings.quality == .efficient ? 1 : settings.quality == .ultra ? 4 : 2
+            u.materialTimeSamples = UInt32(work.materialSamples)
             u.materialShutterSeconds = Float(0.5 * settings.diskPlayback.rawValue / Double(max(1,work.fps)))
         }
         let model = DiskModel(spin:Double(settings.blackHoleSpin),massSolar:settings.massSolar,accretionSolarMassesPerYear:settings.accretionSolarMassesPerYear,outerRadius:settings.diskOuterRadius)
@@ -389,12 +423,13 @@ final class BlackHoleRenderer: NSObject, MTKViewDelegate {
         }
         return u
     }
-    private func completed(ms:Double,width:Int,height:Int,work:QualityWorkload,history:UInt32,traced:Bool,radiant:Bool,error:String?) {
-        guard error == nil else { telemetry.phase = "GPU error: \(error!)"; geometryKey = ""; return }
+    private func completed(ms:Double,width:Int,height:Int,work:QualityWorkload,history:UInt32,traced:Bool,radiant:Bool,configuration:UInt64,error:String?) {
+        guard error == nil else { telemetry.phase = "GPU error: \(error!)"; geometryKey = nil; return }
         // Never mistake a cheap cached update for a cheap geodesic trace:
         // doing so would repeatedly inflate work and invalidate the cache.
-        if traced { quality.record(milliseconds:ms); lastTraceMS = ms; cachedFrameCount = 0 }
-        else if radiant {
+        if traced, configuration == quality.configurationID { quality.record(milliseconds:ms); lastTraceMS = ms; cachedFrameCount = 0 }
+        else if radiant, configuration == quality.configurationID {
+            if settings.diskRotation && settings.materialStrength > 0 { quality.recordCached(milliseconds:ms) }
             cachedFrameCount += 1
             if cachedFrameCount == 45 { quality.refineCached(milliseconds:lastTraceMS) }
         }

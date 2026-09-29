@@ -4,7 +4,7 @@ import {traceRows} from './trace-queue.js';
 export const defaults = {
   spin:.82, mass:1e8, accretion:.1, outerRadius:30, thickness:0,
   cameraYaw:-.28, cameraPitch:.06, cameraDistance:80, fov:.48, lookYaw:0, lookPitch:0,
-  quality:'interactive', appearance:'radiant', exposureEV:0, paletteTemperature:6800,
+  quality:'max', appearance:'radiant', exposureEV:0, paletteTemperature:6800,
   materialStrength:.9, glowStrength:0, fluctuations:0, rotation:true,
   playback:4000, energy:false, diagnosticMode:false, passage:false,
 };
@@ -13,7 +13,7 @@ export const modes = {
   auto:{steps:4096,tolerance:2e-6,maxStep:.025,samples:1,fps:60,pixels:1_500_000,traceBudget:800},
   efficient:{steps:2048,tolerance:3e-6,maxStep:.025,samples:1,fps:30,pixels:600_000,traceBudget:400},
   cinematic:{steps:4096,tolerance:8e-7,maxStep:.018,samples:2,fps:30,pixels:2_500_000,traceBudget:1800},
-  max:{steps:8192,tolerance:3e-7,maxStep:.012,samples:4,fps:60,pixels:8_294_400,traceBudget:5000},
+  max:{steps:8192,tolerance:3e-7,maxStep:.012,samples:4,fps:60,pixels:8_294_400,traceBudget:5000,gpuBudgetFraction:.875},
 };
 
 /** WebAssembly owns f64 source physics; WebGPU owns transport and camera. */
@@ -51,7 +51,11 @@ export class KerrRenderer {
     this.adapter=adapter;
     if(!this.adapter) throw Error('No WebGPU adapter is available. Check browser graphics acceleration.');
     const timestamp=this.adapter.features.has('timestamp-query');
-    const maxStorage=Math.min(256*1024*1024,this.adapter.limits.maxStorageBufferBindingSize);
+    // Request enough supported storage for the highest useful ray-map size,
+    // including chooseRenderSize's 10% reserve. Requesting a limit allocates
+    // nothing; actual maps remain viewport-, calibration- and memory-bounded.
+    const usefulStorage=Math.ceil(modes.max.pixels*modes.max.samples*16/.9);
+    const maxStorage=Math.min(usefulStorage,this.adapter.limits.maxStorageBufferBindingSize,this.adapter.limits.maxBufferSize);
     this.device=await this.adapter.requestDevice({
       requiredFeatures:timestamp?['timestamp-query']:[],
       requiredLimits:{maxStorageBufferBindingSize:maxStorage,maxBufferSize:maxStorage},
@@ -233,7 +237,13 @@ export class KerrRenderer {
             this.emissionMS=Number(stamps[1]-stamps[0])/1e6;
             this.presentationMS=Number(stamps[3]-stamps[2])/1e6;
             this.gpuMS=Number(stamps[3]-stamps[0])/1e6;
-            this.gpuTiming={ms:this.gpuMS,at:completedAt,generation};
+            // Smooth timestamp jitter only within one unchanged workload.
+            // The HUD keeps the raw span; adaptation avoids retracing a large
+            // map in response to one noisy timestamp. resetTiming clears it.
+            const previous=this.gpuTiming;
+            const stableMS=previous?.generation===generation ? previous.ms*.65+this.gpuMS*.35 : this.gpuMS;
+            this.gpuTiming=Number.isFinite(this.gpuMS)&&this.gpuMS>0
+              ? {ms:stableMS,at:completedAt,generation} : null;
           }
         } finally {this.queryRead.unmap();this.queryBusy=false;}
       }

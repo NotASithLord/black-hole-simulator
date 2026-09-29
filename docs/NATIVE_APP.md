@@ -80,6 +80,19 @@ Click the render area before using movement keys. Orbit varies viewing inclinati
 
 All quality modes use the same metric and chosen source appearance. The renderer inspects Metal GPU families, unified memory, and recommended working-set size. Navigation calibration measures actual GPU command duration; subsequent adaptation uses a rolling median of traced frames. Cached material-only frames do not falsely increase the tracing budget. After 45 stationary cached frames, a separate bounded refinement uses the last measured **trace** cost to increase resolution/sampling if there is headroom for a one-off map build. There are at most three refinement stages per quality configuration; build budgets are 600 ms Max, 260 ms Cinematic, 160 ms Auto, 80 ms Efficient. Wallpaper skips this refinement. GPU capacity is not inferred from CPU cores or a marketing model name.
 
+Max Fidelity is the default. Its foreground GPU execution-time budget is 87.5%
+of the requested frame interval, with a display-aware ceiling of 120 FPS; Low Power Mode and serious
+thermal constraints lower the budget and frame ceiling. This targets time spent
+on this app's GPU commands, not total-device utilization. Metal may round the
+requested cadence to one supported by the display. Cached Radiant frames
+have separate feedback that can improve shutter integration from four to eight
+or sixteen material samples without invalidating Kerr geometry. Useful quality
+ceilings remain bounded; no artificial work is added to reach a utilization meter.
+
+The frame loop uses typed, value-based cache keys instead of formatting strings
+for model, camera and geometry comparisons. The initial model table is reused on
+the first frame, and stale configuration feedback is excluded from adaptation.
+
 | Mode | Numerical target / sampling policy |
 |---|---|
 | Auto | Local target 2×10⁻⁶; adapt internal resolution and samples toward 60 FPS |

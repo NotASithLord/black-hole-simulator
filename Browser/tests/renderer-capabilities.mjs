@@ -22,11 +22,11 @@ let passed=0;
 const check=(name,condition)=>{assert.ok(condition,name);passed++;console.log(`PASS ${name}`);};
 const deferred=()=>{let resolve;const promise=new Promise(done=>{resolve=done;});return {promise,resolve};};
 
-function makeHost(timestamp,format) {
+function makeHost(timestamp,format,limitOverrides={}) {
   const events=[],buffers=[],textures=[],computePipelines=[],renderPipelines=[],passes=[];
-  let request,queryCount=0,resolveCount=0;
+  let request,queryCount=0,resolveCount=0,timestampScale=1;
   const limits={maxStorageBufferBindingSize:128*MiB,maxBufferSize:256*MiB,maxTextureDimension2D:8192,
-    maxComputeWorkgroupsPerDimension:65535,maxStorageBuffersPerShaderStage:8,maxStorageTexturesPerShaderStage:4};
+    maxComputeWorkgroupsPerDimension:65535,maxStorageBuffersPerShaderStage:8,maxStorageTexturesPerShaderStage:4,...limitOverrides};
   const device={
     limits:{...limits},lost:new Promise(()=>{}),addEventListener(){},
     queue:{
@@ -75,7 +75,7 @@ function makeHost(timestamp,format) {
         if(descriptor.timestampWrites) {
           assert.equal(timestamp,true);
           const {querySet,beginningOfPassWriteIndex:begin,endOfPassWriteIndex:end}=descriptor.timestampWrites;
-          commands.push(()=>{querySet.values[begin]=BigInt(begin+1)*1_000_000n;querySet.values[end]=BigInt(end+1)*1_000_000n;});
+          commands.push(()=>{querySet.values[begin]=BigInt((begin+1)*timestampScale)*1_000_000n;querySet.values[end]=BigInt((end+1)*timestampScale)*1_000_000n;});
         }
         return {setPipeline(){},setBindGroup(){},draw(){},
           dispatchWorkgroups(x,y,z=1){assert.ok([x,y,z].every(n=>n<=limits.maxComputeWorkgroupsPerDimension));},end(){}};
@@ -116,10 +116,22 @@ function makeHost(timestamp,format) {
     getCurrentTexture(){return {createView(){return {};}};},
   };}};
   return {canvas,device,events,buffers,textures,computePipelines,renderPipelines,passes,
-    get request(){return request;},get queryCount(){return queryCount;},get resolveCount(){return resolveCount;}};
+    get request(){return request;},get queryCount(){return queryCount;},get resolveCount(){return resolveCount;},
+    set timestampScale(value){timestampScale=value;}};
 }
 
 try {
+  for(const [name,limits,expected] of [
+    ['Large-memory adapter', {maxStorageBufferBindingSize:1024*MiB,maxBufferSize:2048*MiB},589824000],
+    ['Buffer-size-limited adapter', {maxStorageBufferBindingSize:1024*MiB,maxBufferSize:192*MiB},192*MiB],
+  ]) {
+    const host=makeHost(false,'bgra8unorm',limits),renderer=new KerrRenderer(host.canvas);
+    await renderer.init();
+    check(`${name} requests the supported useful ray-map limit instead of an arbitrary 256 MiB ceiling`,
+      host.request.requiredLimits.maxStorageBufferBindingSize===expected&&host.request.requiredLimits.maxBufferSize===expected);
+    check(`${name} does not allocate the requested memory ceiling at startup`,host.buffers.every(buffer=>buffer.size<MiB));
+    renderer.camera.destroy();for(const buffer of host.buffers)buffer.destroy();
+  }
   for(const timestamp of [false,true]) {
     const label=timestamp?'optional timestamps':'no timestamp feature';
     const host=makeHost(timestamp,timestamp?'bgra8unorm':'rgba8unorm');
@@ -141,6 +153,14 @@ try {
       check('Timestamp writes use the actual emission and presentation passes',
         host.passes.filter(pass=>pass.timestampWrites).map(pass=>pass.kind).join('|')==='compute|render'&&host.queryCount===1&&host.resolveCount===1);
       check('Timestamp readback distinguishes emission, presentation and total span',renderer.emissionMS===1&&renderer.presentationMS===1&&renderer.gpuMS===3);
+      host.timestampScale=2;await renderer.render(0,{wait:true,measure:true});
+      check('Adaptation smooths same-workload GPU timestamps while preserving the raw HUD span',
+        renderer.gpuMS===6&&Math.abs(renderer.gpuTiming.ms-4.05)<1e-12);
+      renderer.resetTiming();await renderer.render(0,{wait:true,measure:true});
+      check('Timing reset does not blend old resource costs into new workload evidence',renderer.gpuTiming.ms===6);
+      host.timestampScale=0;await renderer.render(0,{wait:true,measure:true});
+      check('Zero-quantized timestamps cannot manufacture fresh execution headroom',renderer.gpuMS===0&&renderer.gpuTiming===null);
+      host.timestampScale=1;renderer.resetTiming();
       // Fault injection tests exception-path ownership, not browser failures.
       // Each rejected operation must retire its frame/query and permit the next
       // measurement, including when mapping succeeded before decoding failed.

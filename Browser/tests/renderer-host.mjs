@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
 import {KerrRenderer} from '../src/renderer.js';
 
 // Pure host scheduling test: no browser, GPU API, or shader execution.
@@ -81,12 +82,17 @@ function queuedRenderer() {
 {
   const renderer=new KerrRenderer({});renderer.meta=new Float64Array(11);
   let data=new DataView(renderer.uniforms());
-  assert.equal(renderer.settings.quality,'interactive');assert.equal(renderer.settings.thickness,0);
+  assert.equal(renderer.settings.quality,'max');assert.equal(renderer.settings.thickness,0);
   assert.equal(renderer.settings.glowStrength,0);assert.equal(renderer.settings.fluctuations,0);assert.equal(renderer.settings.playback,4000);
+  assert.equal(data.getUint32(148,true),1);assert.equal(data.getUint32(172,true),4);
+  assert.equal(data.getUint32(32,true),8192);assert.ok(Math.abs(data.getFloat32(52,true)-3e-7)<1e-13);
+  renderer.settings.quality='interactive';data=new DataView(renderer.uniforms());
   assert.equal(data.getUint32(148,true),0);assert.equal(data.getUint32(172,true),1);
-  renderer.settings.quality='auto';data=new DataView(renderer.uniforms());
-  assert.equal(data.getUint32(148,true),1);
-  console.log('PASS Motion-first defaults select lightweight source and one material sample');
+  console.log('PASS Max-fidelity defaults retain strict transport and full material sampling; Motion first remains available');
+  const html=await readFile(new URL('../index.html',import.meta.url),'utf8');
+  assert.match(html,/<option value="max" selected>Max fidelity<\/option>/);
+  assert.doesNotMatch(html,/<option value="interactive" selected>/);
+  console.log('PASS Visible startup quality control agrees with Max-fidelity renderer defaults');
 }
 {
   const renderer=new KerrRenderer({});renderer.meta=new Float64Array(11);

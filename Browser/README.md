@@ -4,16 +4,19 @@ A browser target for the native black-hole simulator. The same Swift CPU physics
 core used by the native app is compiled to WebAssembly; Kerr light transport, animated emission and photographic
 response execute on the GPU using WGSL compute and render passes.
 
-The default is **Motion first**: a low-resolution, one-ray-per-pixel thin disk,
-simple visibly rotating material, no glow, and a 60 FPS target. Extra temperature
-fluctuations start disabled; the rotating material itself still varies brightness. It deliberately
-trades spatial detail for responsiveness. Detailed source material, more samples,
-finite photosphere height and photographic glow remain available as opt-ins.
-Frame targets are not performance guarantees; the renderer reduces resolution
-further on slower adapters rather than reserving a high minimum image size.
-On calibrated faster hardware, a stationary view can grow to 2.0736 million
-pixels while retaining the simple material and one ray per pixel. Movement and
-energy saving keep the original inexpensive ceiling.
+The default is **Max Fidelity**: tight Kerr integration tolerances, up to four
+cached rays per pixel, detailed rotating material and a 60 FPS target. Resolution
+adapts to the actual GPU, with up to 8.29 million pixels within viewport, memory
+and measured trace-time limits. With GPU timestamps, the controller targets 87.5%
+of the frame interval for useful rendering work; this is not a measurement or
+guarantee of total-device GPU utilization. Smaller GPUs still scale down.
+
+**Motion first** remains an explicit low-cost option with one ray per pixel and
+simple material. Energy saving, finite photosphere height, photographic glow and
+extra emission fluctuations remain separate controls. The disk still starts thin
+with glow/fluctuations off; quality does not silently change the physical model.
+Frame targets are not performance guarantees, and moving-camera tracing remains
+substantially more expensive than animating cached geometry.
 
 The browser needs WebGPU and hardware acceleration. Open the application over
 `http://localhost`, `http://127.0.0.1`, or HTTPS; opening `index.html` directly with
@@ -97,11 +100,11 @@ requires no host imports and performs no per-frame allocation or memory growth.
 
 | Quality | Maximum integration steps | Cached samples per pixel | Nominal frame target | Pixel ceiling |
 | --- | ---: | ---: | ---: | ---: |
-| Motion first (default) | 2,048 | 1 | 60 FPS | 0.2304 million moving/energy; up to 2.0736 million calibrated stationary |
+| Motion first | 2,048 | 1 | 60 FPS | 0.2304 million moving/energy; up to 2.0736 million calibrated stationary |
 | Auto | 4,096 | 1 | 60 FPS | 1.5 million |
 | Efficient | 2,048 | 1 | 30 FPS | 0.6 million |
 | Cinematic | 4,096 | 2 | 30 FPS | 2.5 million |
-| Max fidelity | 8,192 | 4 | 60 FPS | 8.29 million |
+| Max fidelity (default) | 8,192 | 4 | 60 FPS | 8.29 million |
 
 These are budgets and ceilings, not guaranteed frame rates or fixed render sizes.
 Internal resolution is constrained by the display, adapter storage limits and
@@ -111,14 +114,32 @@ otherwise submission completion provides a broader timing estimate. Energy saver
 targets 20 FPS. Camera passage requires continuous retracing and is considerably
 more expensive than animating a stationary view.
 
+Max Fidelity smooths current-workload GPU timestamps against an 87.5% frame-time
+budget, but prioritizes stable cached animation over tracking that budget exactly.
+It tolerates ordinary timing noise, requires several distinct timing windows and
+a meaningful pixel-count change (15% for reductions and Max GPU recovery;
+5% for conservative recovery), and waits at least five seconds between
+reductions or fifteen seconds before upgrades (longer after expensive traces).
+Recovery is bounded at 10% linear resolution per decision; stale timings cannot
+increase work. Quality-only replacements directly build a stationary four-ray
+map: they do not enter the low-resolution camera-motion preview path. The current
+map's sizing calibration stays fixed during automatic quality adjustment.
+Without timestamps, the
+conservative completed-frame cadence fallback remains. Energy saving uses the
+lower timing budget. Once useful resolution reaches its ceiling, the renderer
+does not repeat ray tracing or add dummy work just to keep the GPU busy. Supported
+ray-map buffer limits are requested up to 562.5 MiB, sufficient for the existing
+4K/four-ray ceiling with reserve; smaller adapter limits are honored and this
+request does not allocate memory by itself.
+
 Motion first also renders the presentation at its internal resolution and lets
 the browser upscale it, avoiding a full-Retina photographic pass. With glow off,
 the camera allocates no glare pyramid and executes no blur passes. Enabling glow
 allocates the seven logical levels lazily and aliases repeated 1×1 tail levels.
 Its dependent dispatches share a compute pass; unchanged camera settings reuse
-their last uniform upload. Resolution feedback reacts after a
-short warmup and roughly 1.2 seconds of fresh timing samples; it decreases quickly
-under load and recovers conservatively. Fresh GPU timestamps showing abundant
+their last uniform upload. Resolution feedback samples roughly every 1.2 seconds,
+but actual cache replacements require sustained evidence and the dwell times above.
+Fresh GPU timestamps showing abundant
 spare execution capacity permit up to 10% linear-resolution recovery per decision;
 completion-only evidence retains the slower 3% limit. Camera motion starts with a 24 ms tracing budget;
 still-view refinement starts with a 100 ms budget in Motion first. Calibration
@@ -216,7 +237,7 @@ audit is documented in [PERFORMANCE.md](PERFORMANCE.md).
 `node Browser/tests/renderer-host.mjs` uses a fake submission queue to verify that
 a camera change during the final trace strip cannot publish stale geometry.
 It also tests immutable camera snapshots, bounded nonblocking submissions,
-table-cache invalidation and the lightweight defaults. These are host tests, not
+table-cache invalidation, Max Fidelity defaults and optional lightweight mode. These are host tests, not
 GPU rendering tests. `tests/trace-queue.mjs` explicitly delays completion fences
 to check two-strip overlap, complete coverage, cancellation and failure draining.
 `tests/quality.mjs` checks resolution limits, weak adapters
