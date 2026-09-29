@@ -89,13 +89,13 @@ export function adaptiveResolutionScale(current, observedMS, budgetMS, minimum =
   return value;
 }
 
-// Max fidelity uses measured GPU execution to approach 85% of a frame interval.
+// Max fidelity uses measured GPU execution to approach 85–90% of a frame interval.
 // Bounded supersampling improves the image rather than submitting dummy work.
 export function gpuTargetScale(current, observedMS, intervalMS, maximum = 3) {
   const value = clamp(finitePositive(current, 1), .2, maximum);
   if (!Number.isFinite(observedMS) || observedMS <= 0 || !Number.isFinite(intervalMS) || intervalMS <= 0) return value;
-  const ratio = observedMS / (intervalMS * .85);
-  if (ratio >= .96 && ratio <= 1.04) return value;
+  const ratio = observedMS / (intervalMS * .875);
+  if (ratio >= .9714 && ratio <= 1.0286) return value;
   return clamp(value * clamp(Math.sqrt(1 / ratio), .75, 1.15), .2, maximum);
 }
 
