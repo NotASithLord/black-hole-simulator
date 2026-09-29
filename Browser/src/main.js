@@ -1,5 +1,5 @@
 import {KerrRenderer,defaults,modes} from './renderer.js';
-import {chooseRenderSize,adaptiveResolutionScale,adaptiveTiming,advanceDeadline} from './quality.js';
+import {chooseRenderSize,adaptiveResolutionScale,adaptiveTiming,advanceDeadline,gpuTargetScale} from './quality.js';
 import {runtimeInfo} from './diagnostics.js';
 
 const $=id=>document.getElementById(id), canvas=$('universe');
@@ -222,7 +222,10 @@ async function tick(now) {
       const evidence=adaptiveTiming({now:drawNow,intervalMS:interval,generation:renderer.timingGeneration,
         gpu:renderer.gpuTiming,completion:renderer.completionTiming});
       if(evidence) {
-        const next=adaptiveResolutionScale(scale,evidence.observedMS,evidence.budgetMS,.2,1,evidence.source);
+        const maximum=modes[s.quality].maxScale??1;
+        const next=s.quality==='max'&&!s.energy&&evidence.source==='gpu'
+          ?gpuTargetScale(scale,evidence.observedMS,interval,maximum)
+          :adaptiveResolutionScale(scale,evidence.observedMS,evidence.budgetMS,.2,maximum,evidence.source);
         if(Math.abs(next-scale)>.001) {
           scale=next;const d=dimensions(false);
           if(d.width!==renderer.width||d.height!==renderer.height) invalidate();

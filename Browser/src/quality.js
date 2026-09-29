@@ -37,14 +37,15 @@ export function chooseRenderSize({
   const modePixels = calibrated && !moving && !energy
     ? Math.max(basePixels, finitePositive(mode.headroomPixels, basePixels))
     : basePixels;
-  const resolutionScale = clamp(finitePositive(scale, 1), 0.001, 1);
+  const maximumScale = !moving && !energy ? finitePositive(mode.maxScale, 1) : 1;
+  const resolutionScale = clamp(finitePositive(scale, 1), 0.001, maximumScale);
   const desiredPixels = Math.min(
     sourceWidth * sourceHeight,
     modePixels,
     measuredPixels,
   ) * resolutionScale * resolutionScale;
   const pixelLimit = Math.max(64, Math.min(memoryPixels, Math.floor(desiredPixels)));
-  const fit = Math.min(1, Math.sqrt(pixelLimit / (sourceWidth * sourceHeight)),
+  const fit = Math.min(maximumScale, Math.sqrt(pixelLimit / (sourceWidth * sourceHeight)),
     maximumAxis / sourceWidth, maximumAxis / sourceHeight);
   let renderWidth = Math.max(8, tileFloor(sourceWidth * fit));
   let renderHeight = Math.max(8, tileFloor(sourceHeight * fit));
@@ -86,6 +87,16 @@ export function adaptiveResolutionScale(current, observedMS, budgetMS, minimum =
     return clamp(value * factor, minimum, maximum);
   }
   return value;
+}
+
+// Max fidelity uses measured GPU execution to approach 85% of a frame interval.
+// Bounded supersampling improves the image rather than submitting dummy work.
+export function gpuTargetScale(current, observedMS, intervalMS, maximum = 3) {
+  const value = clamp(finitePositive(current, 1), .2, maximum);
+  if (!Number.isFinite(observedMS) || observedMS <= 0 || !Number.isFinite(intervalMS) || intervalMS <= 0) return value;
+  const ratio = observedMS / (intervalMS * .85);
+  if (ratio >= .96 && ratio <= 1.04) return value;
+  return clamp(value * clamp(Math.sqrt(1 / ratio), .75, 1.15), .2, maximum);
 }
 
 /**

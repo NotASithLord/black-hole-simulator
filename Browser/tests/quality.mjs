@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { chooseRenderSize, adaptiveResolutionScale, adaptiveTiming, advanceDeadline } from '../src/quality.js';
+import { chooseRenderSize, adaptiveResolutionScale, adaptiveTiming, advanceDeadline, gpuTargetScale } from '../src/quality.js';
 
 let checks = 0;
 function check(name, condition) { assert.ok(condition, name); checks++; console.log(`PASS ${name}`); }
@@ -168,4 +168,13 @@ for (let frame = 0; frame < 600; frame++) {
   if (now >= lowRateDeadline - 1) { lowRateFrames++; lowRateDeadline = advanceDeadline(now, lowRateDeadline, 50); }
 }
 check('Energy-saver 20FPS cadence selects one in three 60Hz frames', lowRateFrames === 200);
+check('GPU target grows useful detail below 85% frame budget', gpuTargetScale(1,5,1000/60)>1);
+check('GPU target holds at 85% frame budget', gpuTargetScale(1,1000/60*.85,1000/60)===1);
+check('GPU target backs off when overloaded', gpuTargetScale(1,22,1000/60)<1);
+check('GPU target respects supersampling ceiling', gpuTargetScale(3,1,1000/60)===3);
+check('GPU target ignores unavailable timestamps', gpuTargetScale(1,NaN,1000/60)===1);
+const superSize=chooseRenderSize({width:400,height:300,mode:{...max,maxScale:3},scale:2,raysPerMS:100000});
+check('Max fidelity can supersample above display resolution',superSize.width>400&&superSize.height>300);
+const bounded=chooseRenderSize({width:400,height:300,mode:{...max,maxScale:3},scale:3,raysPerMS:100000,maxStorageBytes:1024*1024});
+check('Supersampling retains storage safety margin',bounded.width*bounded.height*64<=1024*1024*.9);
 console.log(`${checks}/${checks} pure quality and pacing checks passed.`);
