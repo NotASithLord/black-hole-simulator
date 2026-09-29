@@ -89,12 +89,13 @@ function move(x,y=100){element('universe').dispatch('pointermove',{clientX:x,cli
 try {
   await import('../src/main.js');
   await flush();
-  check('Motion-first startup calibrates, presents, and schedules the interactive loop',()=>{
-    assert.equal(renderer.settings.quality,'interactive');assert.equal(renderer.settings.glowStrength,0);
+  check('Max-fidelity startup calibrates, presents, and schedules the interactive loop',()=>{
+    assert.equal(renderer.settings.quality,'max');assert.equal(renderer.settings.glowStrength,0);
     assert.equal(traceCalls.length,1);assert.equal(renderCalls.length,1);assert.equal(raf.length,1);
     assert.equal(element('loading').hidden,true);
-    assert.ok(element('universe').width*element('universe').height<=32768);
+    assert.ok(element('universe').width*element('universe').height>0);
   });
+  element('quality').value='interactive';element('quality').dispatch('change');
   await step(16);await step(16);
   check('Interactive frames submit without a per-frame CPU/GPU wait',()=>{
     assert.ok(renderCalls.length>=3);

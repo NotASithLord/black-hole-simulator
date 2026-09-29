@@ -7,6 +7,7 @@ const params=new URLSearchParams(location.search),benchmarking=params.has('bench
 let buildIdentity=null;
 const renderer=new KerrRenderer(canvas,message=>$('status').textContent=message);
 const s=renderer.settings;
+s.quality='max';
 let stopped=false,paused=false,revision=0,hardRevision=0,dirty=true,lastChange=0,refined=false,busy=false,needsPresent=true;
 let lastTime=performance.now(),nextFrame=0,lastHUD=0,lastAdapt=0,lastTiming=0,frames=0,fps=0,scale=1;
 let lastCameraTime=lastTime;
