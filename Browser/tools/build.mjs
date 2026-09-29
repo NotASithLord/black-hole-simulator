@@ -16,6 +16,7 @@ await mkdir(path.join(dist,'fixtures'),{recursive:true});
 for (const [from,to] of [['Tests/physics_cases.json','physics_cases.json'],['Browser/tests/fixtures/native-reference.json','native-reference.json']]) {
   await copyFile(path.resolve(root,'..',from),path.join(dist,'fixtures',to));
 }
+await copyFile(path.resolve(root,'../LICENSE'),path.join(dist,'LICENSE'));
 await copyFile(path.resolve(root,'../THIRD_PARTY_NOTICES.md'),path.join(dist,'THIRD_PARTY_NOTICES.md'));
 await cp(path.resolve(root,'../licenses'),path.join(dist,'licenses'),{recursive:true});
 try { await copyFile(path.join(root,'README.md'),path.join(dist,'README.md')); } catch (e) {if(e.code!=='ENOENT') throw e;}

@@ -2,7 +2,10 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 mkdir -p work outputs/BlackHoleDesk.app/Contents/MacOS
+mkdir -p outputs/BlackHoleDesk.app/Contents/Resources
 cp BuildSupport/Info.plist outputs/BlackHoleDesk.app/Contents/Info.plist
+cp LICENSE THIRD_PARTY_NOTICES.md outputs/BlackHoleDesk.app/Contents/Resources/
+cp -R licenses outputs/BlackHoleDesk.app/Contents/Resources/
 
 # The installed CLT may contain two definitions of SwiftBridging. Hide only
 # the legacy copy through a compiler-local overlay; never modify the SDK.

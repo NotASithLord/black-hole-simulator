@@ -3,7 +3,8 @@
 The prebuilt `Browser/public/core.wasm` contains statically linked routines from
 WASI libc. Keep this directory and `THIRD_PARTY_NOTICES.md` with redistributions
 of that binary, including the static browser build. These notices do not grant
-a license to this project's original source code.
+a license to this project's original source code, which is covered separately
+by the root MIT `LICENSE` file.
 
 ## Exact provenance
 
