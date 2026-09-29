@@ -133,7 +133,8 @@ The final film *Interstellar* deliberately adjusted some brightness and spectral
 - `GeometryRefinement.swift`: sparse, cached geodesic supersampling at image boundaries.
 - `ThicknessValidation.swift` / `Tests/validate_thickness.py`: production-GPU and independent finite-surface checks.
 - `AppearanceValidation.swift`: production-GPU transport, fluid, color and camera checks plus image export.
-- `DiskPhysics.swift` / `CIE1931.swift`: physical disk and spectral tables.
+- `Sources/BlackHolePhysics/`: shared Swift disk/spectral physics and CIE data, also compiled to WebAssembly.
+- `DiskPhysics.swift`: native array adapters around that shared core.
 - `GPUVerification.swift` / `Tests/`: production-GPU diagnostics and independent checks.
 - `docs/DISK_MODEL.md`: disk equations, assumptions and test details.
 - `THIRD_PARTY_NOTICES.md`: official CIE dataset attribution and license.

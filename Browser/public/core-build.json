@@ -1,0 +1,155 @@
+{
+  "schema": 1,
+  "language": "Swift",
+  "compilerVersion": "Apple Swift version 6.4 (swift-6.4-RELEASE)",
+  "compilerHostTarget": "arm64-apple-macosx26.0",
+  "compilerFlags": [
+    "-target",
+    "wasm32-unknown-none-wasm",
+    "-enable-experimental-feature",
+    "Embedded",
+    "-enable-experimental-feature",
+    "Extern",
+    "-wmo",
+    "-O",
+    "-no-allocations",
+    "-parse-as-library",
+    "-Xcc",
+    "-msimd128",
+    "-Xfrontend",
+    "-disable-stack-protector",
+    "-file-prefix-map",
+    "<project>=.",
+    "-module-name",
+    "BlackHolePhysics"
+  ],
+  "linkerVersion": "LLD 22.1.0",
+  "linkerFlags": [
+    "--no-entry",
+    "--strip-all",
+    "--export-memory",
+    "--initial-memory=262144",
+    "--max-memory=262144",
+    "-z",
+    "stack-size=65536",
+    "--export=radial_ptr",
+    "--export=spectral_ptr",
+    "--export=metadata_ptr",
+    "--export=radial_count",
+    "--export=spectral_count",
+    "--export=abi_version",
+    "--export=init_model",
+    "--export=init_spectrum",
+    "--export=isco",
+    "--export=orbital_period",
+    "--export=advance_clock",
+    "--export=clock_seconds",
+    "--export=reset_clock",
+    "--export=adaptive_scale"
+  ],
+  "target": "wasm32-unknown-none-wasm",
+  "swiftPackageSHA256": "8fd03185b98fe27f54a54631c2449decf75d5b466ce8e34abbd414141063c6aa",
+  "wasiSDK": 33,
+  "wasiSDKArchiveSHA256": "85c997a2665ead91673b5bb88b7d0df3fc8900df3bfa244f720d478187bbdc78",
+  "wasiLibcRevision": "161b3195fc2558d2b1ba3eb9ffae3b2b47407623",
+  "linkedMathArchive": "wasi-sysroot/lib/wasm32-wasip1/libc.a",
+  "linkedMathArchiveSHA256": "5d8ba34d8c6fd0ac59e0efe37241143887f8f232864bbeacc4181ae739f63371",
+  "linkedRuntimeObjects": [
+    "__math_divzero.c.obj",
+    "__math_invalid.c.obj",
+    "__math_oflow.c.obj",
+    "__math_uflow.c.obj",
+    "__math_xflow.c.obj",
+    "cbrt.c.obj",
+    "exit.c.obj",
+    "exp.c.obj",
+    "exp_data.c.obj",
+    "expm1.c.obj",
+    "log.c.obj",
+    "log_data.c.obj"
+  ],
+  "buildScriptSHA256": "e2b637cc94723408c7ab8045d70110a8fb9bd7f3bcb5eba1e841a7bb9c5be33d",
+  "sourceHashes": {
+    "Sources/BlackHolePhysics/CIE1931.swift": "809d070490cbf6adaa2e479135812d7509ccd1877da96b5a04dfee02186dd345",
+    "Sources/BlackHolePhysics/PhysicsMath.swift": "9845be9aa1a75682831eeb36d2ad9ed7d78081e3565607bed60a5bdc78e55bb2",
+    "Sources/BlackHolePhysics/SharedDiskPhysics.swift": "52ad6a77242da248cb285514172ee35f08e4a65c34e81168ed6a718ce26b6cfc",
+    "Browser/core/WasmExports.swift": "dfe7208636b059d76d7650d76960724c2222a92230ffaefb5c1782eeb642e214"
+  },
+  "wasmSHA256": "504ede4ccd3b8f8d4334eceed816f017099e081996ef3815545111ede424b030",
+  "bytes": 56997,
+  "heapBase": 87152,
+  "memoryBytes": 262144,
+  "maximumMemoryBytes": 262144,
+  "stackBytes": 65536,
+  "fixedArena": {
+    "start": 110592,
+    "end": 256824
+  },
+  "heapAllocation": false,
+  "abiVersion": 1,
+  "radialCount": 4096,
+  "spectralCount": 2048,
+  "exports": [
+    {
+      "name": "memory",
+      "kind": "memory"
+    },
+    {
+      "name": "abi_version",
+      "kind": "function"
+    },
+    {
+      "name": "radial_ptr",
+      "kind": "function"
+    },
+    {
+      "name": "spectral_ptr",
+      "kind": "function"
+    },
+    {
+      "name": "metadata_ptr",
+      "kind": "function"
+    },
+    {
+      "name": "radial_count",
+      "kind": "function"
+    },
+    {
+      "name": "spectral_count",
+      "kind": "function"
+    },
+    {
+      "name": "init_model",
+      "kind": "function"
+    },
+    {
+      "name": "init_spectrum",
+      "kind": "function"
+    },
+    {
+      "name": "isco",
+      "kind": "function"
+    },
+    {
+      "name": "orbital_period",
+      "kind": "function"
+    },
+    {
+      "name": "advance_clock",
+      "kind": "function"
+    },
+    {
+      "name": "clock_seconds",
+      "kind": "function"
+    },
+    {
+      "name": "reset_clock",
+      "kind": "function"
+    },
+    {
+      "name": "adaptive_scale",
+      "kind": "function"
+    }
+  ],
+  "imports": []
+}

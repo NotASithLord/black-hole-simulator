@@ -6,39 +6,28 @@ import Foundation
 enum DiskGeometry {
     /// z is the positive photosphere HALF-height; pressure scale height H=z/2.
     /// This rendering bound is a modeling guardrail, not a law of thin disks.
-    static let maximumAspectRatio = 0.20
-    static let maximumCorrugation = 0.08
+    static let maximumAspectRatio = DiskPhysics.maximumAspectRatio
+    static let maximumCorrugation = DiskPhysics.maximumCorrugation
 
     /// Maximum allowed coefficient A in z=A[1-sqrt(r_ISCO/rho)]. The radial
     /// maximum of z/rho occurs at rho=(9/4)r_ISCO and equals 4A/(27r_ISCO).
     /// Reserve the full supported corrugation amplitude, keeping z/rho <=0.20.
     static func maximumHeightScale(innerRadius: Double) -> Double {
-        guard innerRadius.isFinite, innerRadius > 0 else { return 0 }
-        return maximumAspectRatio * 27 * innerRadius / (4 * (1 + maximumCorrugation))
+        DiskPhysics.maximumHeightScale(innerRadius: innerRadius)
     }
 
     /// Nominal coefficient BEFORE the geometric guardrail, in units GM/c².
     /// lambda = eta Mdot c² / L_Edd, so A=3 lambda/eta, not 6 lambda/eta.
     /// Multiplier!=1 is an explicitly chosen geometry variation.
     static func nominalHeightScale(for model: DiskModel, multiplier: Float) -> Double {
-        guard model.spin.isFinite, abs(model.spin) <= 0.9999,
-              model.massSolar.isFinite, model.massSolar > 0,
-              model.accretionSolarMassesPerYear.isFinite, model.accretionSolarMassesPerYear >= 0,
-              multiplier.isFinite, multiplier > 0 else { return 0 }
-        let efficiency = model.nominalEfficiency
-        guard efficiency.isFinite, efficiency > 0 else { return 0 }
-        let requested = 3 * model.nominalEddingtonRatio / efficiency * Double(multiplier)
-        return requested.isNaN ? 0 : max(0, requested)
+        DiskPhysics.nominalHeightScale(for: model, multiplier: Double(multiplier))
     }
 
     /// Bounded coefficient uploaded to Metal. At fixed physical Mdot/M, the
     /// efficiency cancels from the uncapped coefficient; spin still controls
     /// r_ISCO, the radial profile, rotation, and the maximum allowed coefficient.
     static func heightScale(for model: DiskModel, multiplier: Float) -> Float {
-        let requested = nominalHeightScale(for: model, multiplier: multiplier)
-        guard requested > 0, model.spin.isFinite, abs(model.spin) <= 0.9999 else { return 0 }
-        let inner = DiskPhysics.isco(spin: model.spin)
-        return Float(min(requested, maximumHeightScale(innerRadius: inner)))
+        Float(DiskPhysics.heightScale(for: model, multiplier: Double(multiplier)))
     }
 
     /// Positive photosphere half-height at pseudo-cylindrical radius rho.

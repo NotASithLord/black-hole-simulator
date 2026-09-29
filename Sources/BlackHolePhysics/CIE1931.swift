@@ -9,8 +9,18 @@
 // available under CC BY-SA 4.0. No claim of CIE endorsement.
 //
 // Columns: wavelength in nm, x-bar, y-bar, z-bar.
-enum CIE1931 {
-    static let samples: [SIMD4<Double>] = [
+public enum CIE1931 {
+    public static let count = 471
+
+    #if !arch(wasm32)
+    // Native collection convenience for reference checks. The production table
+    // builders below read the same inline data directly without this allocation.
+    public static let samples: [SIMD4<Double>] = withSamples { Array($0) }
+    #endif
+
+    // A homogeneous tuple has fixed inline storage on both native and Embedded
+    // Swift. Unlike Array, this immutable dataset needs no allocator in WASM.
+    private static let storage = (
         SIMD4(360,0.000129900000,0.0000039170000,0.000606100000),
         SIMD4(361,0.000145847000,0.0000043935810,0.000680879200),
         SIMD4(362,0.000163802100,0.0000049296040,0.000765145600),
@@ -481,6 +491,14 @@ enum CIE1931 {
         SIMD4(827,0.000001544022,0.0000005575746,0.000000000000),
         SIMD4(828,0.000001439440,0.0000005198080,0.000000000000),
         SIMD4(829,0.000001341977,0.0000004846123,0.000000000000),
-        SIMD4(830,0.000001251141,0.0000004518100,0.000000000000),
-    ]
+        SIMD4(830,0.000001251141,0.0000004518100,0.000000000000)
+    )
+
+    static func withSamples<Result>(_ body: (UnsafeBufferPointer<SIMD4<Double>>) -> Result) -> Result {
+        withUnsafePointer(to: storage) { pointer in
+            pointer.withMemoryRebound(to: SIMD4<Double>.self, capacity: count) { rows in
+                body(UnsafeBufferPointer(start: rows, count: count))
+            }
+        }
+    }
 }

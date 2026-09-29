@@ -1,7 +1,7 @@
 # Event Horizon · WebAssembly + WebGPU
 
-A browser target for the native black-hole simulator. The CPU physics core is
-compiled to WebAssembly; Kerr light transport, animated emission and photographic
+A browser target for the native black-hole simulator. The same Swift CPU physics
+core used by the native app is compiled to WebAssembly; Kerr light transport, animated emission and photographic
 response execute on the GPU using WGSL compute and render passes.
 
 The default is **Motion first**: a low-resolution, one-ray-per-pixel thin disk,
@@ -33,7 +33,7 @@ are `node tools/build.mjs` and `node tools/serve.mjs`. Set `PORT` to choose a
 different local port. The development server binds only to this computer.
 
 The build copies a self-contained static application into
-`outputs/BlackHoleBrowser/`. It uses the checked-in `public/core.wasm`, so no C
+`outputs/BlackHoleBrowser/`. It uses the checked-in `public/core.wasm`, so no Swift
 compiler is needed. Before copying files, the build validates both WGSL shaders
 with a pinned, integrity-checked offline Naga compiler. Its first invocation
 downloads the development tool into `work/`; subsequent checks use that cache.
@@ -46,7 +46,7 @@ preserving relative paths and serving `.wasm` as `application/wasm` and `.js` as
 JavaScript. Node is only needed for the included build/server tools, not for
 viewing a hosted build. The application does not use external CDNs or services.
 
-To rebuild the compiled physics core after changing its C source:
+To rebuild after changing `Sources/BlackHolePhysics/` or its Swift WASM adapter:
 
 ```sh
 node Browser/tools/build-wasm.mjs
@@ -54,17 +54,21 @@ node Browser/tests/wasm-core.mjs
 node Browser/tools/build.mjs
 ```
 
-The first compiler build downloads a pinned, SHA-256-verified WASI SDK 33 into
-`work/wasm-toolchain/`. Supported automatic downloads are Apple Silicon/Intel
-macOS and ARM64/x86-64 Linux. Alternatively set `WASI_SDK_PATH` to an existing
-SDK. The compiler is a development dependency and is not part of the deployed
-application. No system compiler files are modified.
+The first compiler build downloads pinned, SHA-256-verified Swift 6.4.0 and WASI
+SDK 33 toolchains into `work/wasm-toolchain/`. Swift is compiled in Embedded mode;
+the SDK supplies the linker and statically linked math routines, not a second
+implementation of the physics. The automatic Swift download supports macOS and
+requires several GB of local disk space. On other hosts supply an Embedded/WASM-
+capable compiler with `SWIFT_WASM_COMPILER_PATH` or `SWIFT_TOOLCHAIN_PATH`.
+`WASI_SDK_PATH` selects an existing SDK. Toolchains are development dependencies,
+not part of the deployed app, and no system compiler files are modified.
 
 ## Architecture and scaling
 
 | Component | Execution | Responsibility |
 | --- | --- | --- |
-| `core/physics.c` | Compiled WASM, double precision | Page–Thorne flux quadrature, 4,096-entry radial table, 2,048-entry spectrum from all 471 CIE wavelengths, physical units and source clock |
+| `../Sources/BlackHolePhysics/` | Shared Swift, compiled to native code and WASM | Double-precision Page–Thorne quadrature, 4,096-entry radial table, 2,048-entry spectrum from all 471 CIE wavelengths, physical units and source clock |
+| `core/WasmExports.swift` | Thin WASM adapter | Existing browser ABI and caller-owned fixed-memory buffers; no duplicated physics equations |
 | `src/kerr.wgsl` tracing | WebGPU compute | Kerr null geodesics, finite photosphere intersections, travel delay and redshift |
 | Cached ray records | GPU storage buffer | Radius, source azimuth, delay and redshift for each pixel sample; 16 bytes per sample |
 | `src/kerr.wgsl` shading | WebGPU compute | Retarded rotating material, thermal/colored emission and prescribed light variation |
@@ -204,6 +208,11 @@ closed-form flux, Kerr ISCO references, physical scaling, spectral chromaticity,
 time continuity and the adaptive controller. It also rejects unexpected runtime
 imports and checks the fixed memory/table interface.
 
+`node Browser/tests/shared-swift-source.mjs` verifies that the checked-in WASM
+matches the hashes of the shared Swift sources and adapter, and that both native
+build paths use those sources. The migration's paired numerical/performance
+audit is documented in [PERFORMANCE.md](PERFORMANCE.md).
+
 `node Browser/tests/renderer-host.mjs` uses a fake submission queue to verify that
 a camera change during the final trace strip cannot publish stale geometry.
 It also tests immutable camera snapshots, bounded nonblocking submissions,
@@ -244,9 +253,9 @@ equivalence tests, the browser matrix and outstanding live-GPU verification.
 CIE 2019, *Colour-matching functions of CIE 1931 standard colorimetric observer*,
 International Commission on Illumination, Vienna:
 <https://doi.org/10.25039/CIE.DS.xvudnb9b>. The complete 1 nm dataset, 360–830 nm,
-is included in `core/cie1931.h` under
+is included in `../Sources/BlackHolePhysics/CIE1931.swift` under
 [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). Numeric values
-are preserved; formatting was converted to C arrays. No CIE endorsement is
+are preserved; formatting was converted to Swift inline storage. No CIE endorsement is
 claimed. Keep this attribution and the data license when redistributing.
 
 See `THIRD_PARTY_NOTICES.md` in the deployed output and repository for additional

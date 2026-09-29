@@ -5,6 +5,8 @@ lensing, an animated accretion disk and cinematic lighting.
 
 The native app uses Swift and Metal, including a desktop wallpaper mode. The browser
 version uses WebAssembly and WebGPU, with lightweight defaults and adaptive quality.
+Both compile the same [Swift physics core](Sources/BlackHolePhysics); the browser
+does not maintain a separate C implementation.
 
 ## Run on macOS
 

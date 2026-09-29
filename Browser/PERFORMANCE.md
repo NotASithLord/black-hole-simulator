@@ -1,13 +1,72 @@
 # Source and cross-engine optimization review
 
-2026-09-27 · Apple M4 · macOS 26.6.2
+2026-09-27 review; 2026-09-28 shared Swift migration · Apple M4 · macOS 26.6.2
+
+## Shared Swift migration — 2026-09-28
+
+Both targets now compile `Sources/BlackHolePhysics/*.swift`. The native app uses
+small array adapters; the browser's `WasmExports.swift` preserves its existing
+ABI and fixed-memory buffers. The duplicate C physics and CIE data files were
+removed. Metal/WGSL rendering, controls and quality policies were not changed.
+
+The actual Swift WASM and archived C WASM were compared across 57 model profiles:
+all **933,888 radial and 8,192 spectral float values are bit-identical**, as are
+the physical double-precision metadata. Tests also cover eight cache transitions,
+23 rejected model inputs with state preservation, orbital helpers, source time
+and adaptive scaling. Comparison with the previous native Swift implementation
+also preserves all 884,736 radial and 8,192 spectral float values across its 54
+profiles. These are tested values, not a guarantee for every possible input or
+GPU backend.
+
+Paired CPU comparison (Swift time / previous C time; lower is faster):
+
+| Workload | Node/V8 | Bun/JavaScriptCore |
+| --- | ---: | ---: |
+| Complete physics startup | 1.006× | 1.012× |
+| Spectral initialization | 1.004× | 1.043× |
+| Radial initialization | 0.819× | 0.916× |
+| Spin change | 0.860× | 0.910× |
+| Mass change | 0.716× | 0.991× |
+| Accretion change | 0.708× | 0.978× |
+
+Protocol: actual precompiled modules, eight warmups, 31 alternating-order pairs;
+model updates use 400 warmups followed by 31 blocks of 100 calls. Complete startup
+medians were 5.070 → 5.124 ms in Node and 4.500 → 4.458 ms in Bun; medians of paired
+ratios differ from ratios of independent medians. Height/repeated-model calls
+remain tens of nanoseconds and varied by roughly 2–6%. Startup is approximately
+unchanged, with faster geometry updates; literal identical timings are not claimed.
+These are CPU measurements, **not new browser FPS or GPU results**.
+
+The module grows from 29,563 to 56,997 bytes (about 27 KiB extra uncompressed),
+retaining zero imports, fixed 256 KiB memory and compiler-enforced no heap
+allocation. Ordered scalar spectral accumulation and IEEE hardware square root
+avoid compiler overhead without reduced precision, samples or relaxed math.
+Swift runtime and statically linked math notices are retained under `licenses/`.
+
+The default source/provenance test rejects stale WASM after a shared-source change.
+The final native build passes 31 disk-physics and 23 source-motion checks; its
+177-ray Metal diagnostics in both Auto and Max Fidelity agree with the independent
+binary64 reference on every capture/disk/escape classification. The offline
+browser suite passes with the new module, including 11 shared-source/artifact
+checks. Live browser rendering has not been remeasured in this migration.
+To repeat the migration comparison with an archived previous module and optional
+native fixture:
+
+```sh
+node Browser/tests/shared-swift-parity.mjs previous.wasm Browser/public/core.wasm native-before.json --benchmark
+```
+
+Use Bun in place of Node for the JavaScriptCore CPU comparison. The native fixture
+generator is `Browser/tests/shared-swift-native-fixture.swift`; archived binaries
+and local raw reports are not application dependencies. The earlier review and
+its historical C-to-C performance measurements are retained below.
 
 ## Scope and status
 
 Four parallel review tracks covered compiled source physics, shader arithmetic,
 the application lifecycle, and WebGPU camera/resource portability. Source-level
 changes were validated before browser-specific work. Native Swift/Metal files
-were not modified. Motion first remains the default.
+were not modified in that September 27 pass. Motion first remains the default.
 
 **Cross-engine GPU validation is still pending.** The following installed versions
 were recorded on the development machine, not validated by rendering this build:

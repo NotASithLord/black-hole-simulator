@@ -6,11 +6,11 @@ flags=()
 if [[ -f /Library/Developer/CommandLineTools/usr/include/swift/bridging.modulemap && -f /Library/Developer/CommandLineTools/usr/include/swift/module.modulemap ]]; then
     flags=(-vfsoverlay work/toolchain-overlay.json -Xcc -ivfsoverlay -Xcc work/toolchain-overlay.json)
 fi
-swiftc -O "${flags[@]}" Sources/BlackHoleDesk/CIE1931.swift Sources/BlackHoleDesk/DiskPhysics.swift Tests/DiskPhysicsValidation.swift -o work/disk_validation
+swiftc -O "${flags[@]}" Sources/BlackHolePhysics/*.swift Sources/BlackHoleDesk/DiskPhysics.swift Tests/DiskPhysicsValidation.swift -o work/disk_validation
 work/disk_validation | tee outputs/disk-validation.txt
 swiftc -O "${flags[@]}" Sources/BlackHoleDesk/RenderSettings.swift Sources/BlackHoleDesk/AdaptiveQuality.swift Tests/QualityValidation.swift -o work/quality_validation
 work/quality_validation | tee outputs/quality-validation.txt
-swiftc -O "${flags[@]}" Sources/BlackHoleDesk/CIE1931.swift Sources/BlackHoleDesk/DiskPhysics.swift Sources/BlackHoleDesk/DiskMotion.swift Tests/DiskMotionValidation.swift -o work/disk_motion_validation
+swiftc -O "${flags[@]}" Sources/BlackHolePhysics/*.swift Sources/BlackHoleDesk/DiskPhysics.swift Sources/BlackHoleDesk/DiskMotion.swift Tests/DiskMotionValidation.swift -o work/disk_motion_validation
 work/disk_motion_validation | tee outputs/disk-motion-validation.txt
 outputs/BlackHoleDesk.app/Contents/MacOS/BlackHoleDesk --validate-gpu Tests/physics_cases.json outputs/gpu-validation.json
 outputs/BlackHoleDesk.app/Contents/MacOS/BlackHoleDesk --validate-gpu Tests/physics_cases_max.json outputs/gpu-validation-max.json

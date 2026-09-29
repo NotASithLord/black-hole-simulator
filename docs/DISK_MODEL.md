@@ -38,7 +38,7 @@ After `bash build.sh` has created the local toolchain overlay:
 ```sh
 swiftc -O -vfsoverlay work/toolchain-overlay.json \
   -Xcc -ivfsoverlay -Xcc work/toolchain-overlay.json \
-  Sources/BlackHoleDesk/CIE1931.swift \
+  Sources/BlackHolePhysics/*.swift \
   Sources/BlackHoleDesk/DiskPhysics.swift \
   Tests/DiskPhysicsValidation.swift -o work/disk_validation
 ./work/disk_validation

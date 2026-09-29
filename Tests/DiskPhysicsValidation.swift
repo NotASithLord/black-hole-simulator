@@ -1,7 +1,8 @@
 import Foundation
 
 /// Independent scalar checks of the production radial and spectral lookup code.
-/// Build with DiskPhysics.swift and CIE1931.swift; no GPU or SwiftUI required.
+/// Build with Sources/BlackHolePhysics/*.swift and the native DiskPhysics.swift
+/// adapters; no GPU or SwiftUI required.
 @main
 struct DiskPhysicsValidation {
     static var checks = 0
