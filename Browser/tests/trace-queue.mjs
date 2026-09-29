@@ -117,3 +117,158 @@ const check=(name,fn)=>{fn();passed++;console.log(`PASS ${name}`);};
   check('Progress callback failure drains the successor while preserving its primary error',()=>assert.equal(h.active,0));
 }
 console.log(`${passed}/${passed} bounded trace-queue host checks passed; no GPU execution performed.`);
+
+// Deterministic completed-work model: GPU jobs execute quickly, but callbacks
+// are delivered on a coarse 100 ms poll. The pacer advances independently every
+// 16 ms. These are scheduling regressions, not browser/GPU benchmark claims.
+function pacedHost({rowMS=.05,pollMS=100}={}) {
+  let clock=0,nextGPU=0,nextPoll=pollMS,active=0,peak=0;
+  const submissions=[],paces=[];
+  return {submissions,now:()=>clock,
+    get active(){return active;},get peak(){return peak;},
+    pace:()=>new Promise(resolve=>paces.push({at:clock+16,resolve})),
+    submit(row,count) {
+      active++;peak=Math.max(peak,active);nextGPU=Math.max(clock,nextGPU)+count*rowMS;
+      return new Promise(resolve=>submissions.push({row,count,at:clock,doneAt:nextGPU,retired:false,
+        finish(){this.retired=true;active--;resolve();}}));
+    },
+    tick() {
+      clock+=4;
+      if(clock>=nextPoll) {
+        for(const submission of submissions) if(!submission.retired&&submission.doneAt<=clock) submission.finish();
+        nextPoll+=pollMS;
+      }
+      for(let index=paces.length-1;index>=0;index--) if(paces[index].at<=clock) paces.splice(index,1)[0].resolve();
+    },
+  };
+}
+async function drive(task,h) {
+  let settled=false,result,failure;
+  task.then(value=>{settled=true;result=value;},error=>{settled=true;failure=error;});
+  for(let ticks=0;!settled&&ticks<20_000;ticks++) {h.tick();await flush();}
+  assert.ok(settled,'The bounded scheduler must eventually settle when real completions arrive.');
+  if(failure) throw failure;
+  return result;
+}
+{
+  const legacy=pacedHost(),paced=pacedHost(),progress=[];
+  const oldResult=await drive(traceRows({...legacy,pace:null,height:1024}),legacy);
+  const newResult=await drive(traceRows({...paced,height:1024,progress:value=>progress.push(value)}),paced);
+  check('Paced useful submissions amortize coarse completion polling without empty commands',()=>{
+    assert.equal(oldResult,true);assert.equal(newResult,true);
+    assert.ok(paced.now()<legacy.now()*.4,`${paced.now()} ms vs ${legacy.now()} ms`);
+    assert.ok(paced.submissions.every((chunk,index,list)=>index===0||chunk.at-list[index-1].at>=16));
+  });
+  check('Paced row growth consumes settled heads and grows beyond eight rows',()=>{
+    assert.ok(paced.submissions.some(chunk=>chunk.count>=32));
+    assert.ok(paced.submissions.every(chunk=>chunk.count<=64));
+    assert.equal(progress.at(-1),1);assert.ok(progress.every((value,index)=>index===0||value>progress[index-1]));
+  });
+  check('Paced traces retain at most eight unretired chunks and cover each row once',()=>{
+    assert.ok(paced.peak<=8);assert.equal(paced.active,0);
+    let next=0;
+    for(const {row,count} of paced.submissions) {assert.equal(row,next);assert.ok(count>0);next+=count;}
+    assert.equal(next,1024);
+  });
+}
+{
+  const h=pacedHost();
+  assert.equal(await drive(traceRows({...h,height:317,initialRows:128,maxRows:25}),h),true);
+  check('Paced configurable dispatch cap rounds down to a safe workgroup tile',()=>{
+    assert.ok(h.submissions.every(chunk=>chunk.count<=24));
+    assert.equal(h.submissions.reduce((sum,chunk)=>sum+chunk.count,0),317);
+  });
+}
+{
+  const h=host();let cancelled=false,settled=false;
+  const task=traceRows({...h,height:1024,pace:async()=>{},cancel:()=>cancelled})
+    .then(value=>{settled=true;return value;});
+  await flush();assert.equal(h.submissions.length,8);cancelled=true;
+  h.submissions[0].finish();await flush();
+  check('Paced cancellation stops replacement work and waits for every submitted chunk',()=>{
+    assert.equal(h.submissions.length,8);assert.equal(settled,false);
+  });
+  for(const submission of h.submissions.slice(1)) submission.finish();
+  assert.equal(await task,false);assert.equal(h.active,0);
+}
+{
+  const h=host(),failure=Error('Synthetic paced successor failure');let settled=false;
+  const task=traceRows({...h,height:1024,pace:async()=>{}}).then(
+    ()=>assert.fail('Expected successor error'),error=>{settled=true;assert.equal(error,failure);});
+  await flush();assert.equal(h.submissions.length,8);
+  h.submissions[7].finish(failure);await flush();
+  assert.equal(settled,false);
+  for(const submission of h.submissions.slice(0,7)) submission.finish();
+  await task;
+  check('Paced successor failure is handled immediately and drains all earlier jobs',()=>{
+    assert.equal(h.submissions.length,8);assert.equal(h.active,0);
+  });
+}
+{
+  const h=host(),primary=Error('Synthetic pacing failure'),secondary=Error('Synthetic drain failure');let settled=false;
+  const task=traceRows({...h,height:64,pace:async()=>{throw primary;}}).then(
+    ()=>assert.fail('Expected pacing error'),error=>{settled=true;assert.equal(error,primary);});
+  await flush();assert.equal(h.submissions.length,1);assert.equal(settled,false);
+  h.submissions[0].finish(secondary);await task;
+  check('A failed pacing callback drains submitted work and preserves the primary error',()=>assert.equal(h.active,0));
+}
+{
+  const h=host(),failure=Error('Synthetic paced cancellation drain failure');let cancelled=false;
+  const task=traceRows({...h,height:1024,pace:async()=>{},cancel:()=>cancelled}).then(
+    ()=>assert.fail('Expected drain error'),error=>assert.equal(error,failure));
+  await flush();cancelled=true;h.submissions[0].finish();await flush();
+  for(let index=1;index<h.submissions.length;index++) h.submissions[index].finish(index===7?failure:null);
+  await task;
+  check('Paced cancellation does not hide a later failed completion',()=>assert.equal(h.active,0));
+}
+{
+  const h=host();
+  assert.equal(await traceRows({...h,height:8,pace:async()=>{},cancel:()=>true}),false);
+  check('Already-cancelled paced trace submits no work',()=>assert.equal(h.submissions.length,0));
+}
+{
+  const h=host();let settled=false;
+  const task=traceRows({...h,height:1024,pace:async()=>{}}).then(value=>{settled=true;return value;});
+  await flush();assert.equal(h.submissions.length,8);h.advance(300);
+  h.submissions[0].finish();await flush();
+  check('Paced age watchdog waits for real old completions instead of replacing one freed slot',()=>{
+    assert.equal(h.submissions.length,8);assert.equal(settled,false);
+  });
+  // Once every old token has really retired, useful work can resume normally.
+  for(const submission of h.submissions.slice(1)) submission.finish();await flush();
+  let finished=8;
+  while(!settled) {
+    const submitted=h.submissions.length;
+    for(;finished<submitted;finished++)h.submissions[finished].finish();
+    await flush();
+  }
+  assert.equal(await task,true);assert.equal(h.active,0);
+}
+{
+  const h=host(),primary=Error('Synthetic paced submit failure'),secondary=Error('Synthetic preceding fence failure');
+  let settled=false;
+  const task=traceRows({...h,height:64,pace:async()=>{},submit:(row,count)=>{
+    if(row>0)throw primary;return h.submit(row,count);
+  }}).then(()=>assert.fail('Expected submit error'),error=>{settled=true;assert.equal(error,primary);});
+  await flush();assert.equal(h.submissions.length,1);assert.equal(settled,false);
+  h.submissions[0].finish(secondary);await task;
+  check('A paced synchronous submit failure releases its reservation and drains prior work',()=>assert.equal(h.active,0));
+}
+{
+  const h=host(),primary=Error('Synthetic paced progress failure');let settled=false;
+  const task=traceRows({...h,height:1024,pace:async()=>{},progress:()=>{throw primary;}}).then(
+    ()=>assert.fail('Expected progress error'),error=>{settled=true;assert.equal(error,primary);});
+  await flush();h.submissions[0].finish();await flush();assert.equal(settled,false);
+  for(const submission of h.submissions.slice(1)) submission.finish();await task;
+  check('Paced progress failure drains every submitted successor before propagating',()=>assert.equal(h.active,0));
+}
+{
+  const chunks=[];let clock=0;
+  await traceRows({height:100,initialRows:64,maxRows:16,now:()=>clock,
+    submit:async(row,count)=>{chunks.push({row,count});clock++;}});
+  check('Prompt-delivery tracing also respects the caller ray-count row cap',()=>{
+    assert.ok(chunks.every(chunk=>chunk.count<=16));
+    assert.equal(chunks.reduce((sum,chunk)=>sum+chunk.count,0),100);
+  });
+}
+console.log(`${passed}/${passed} trace-queue host checks passed, including paced coarse-poll simulations; no GPU execution performed.`);

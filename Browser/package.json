@@ -7,9 +7,11 @@
     "build": "node tools/build.mjs",
     "build:wasm": "node tools/build-wasm.mjs",
     "start": "node tools/serve.mjs",
-    "test": "node tools/check-wgsl.mjs && node tests/native-fixture.mjs && node tests/shared-swift-source.mjs && node tests/wasm-core.mjs && node tests/renderer-host.mjs && node tests/renderer-capabilities.mjs && node tests/trace-queue.mjs && node tests/quality.mjs && node tests/camera-host.mjs && node tests/camera-invariants.mjs && node tests/shader-source.mjs && node tests/app-host.mjs && node tests/benchmark-host.mjs && node tests/report-identity.mjs",
+    "test": "node tools/check-wgsl.mjs && node tests/native-fixture.mjs && node tests/shared-swift-source.mjs && node tests/wasm-core.mjs && node tests/gpu-timing.mjs && node tests/submission-window.mjs && node tests/completion-probe.mjs && node tests/completion-cadence.mjs && node tests/renderer-host.mjs && node tests/renderer-capabilities.mjs && node tests/trace-queue.mjs && node tests/quality.mjs && node tests/camera-host.mjs && node tests/camera-invariants.mjs && node tests/shader-source.mjs && node tests/app-host.mjs && node tests/benchmark-host.mjs && node tests/report-identity.mjs",
     "benchmark:cpu": "node tests/wasm-benchmark.mjs && node tools/benchmark-host.mjs",
-    "check:shaders": "node tools/check-wgsl.mjs"
+    "check:shaders": "node tools/check-wgsl.mjs",
+    "check:precision-metal": "node tests/precision-metal.mjs",
+    "check:image-metal": "node tests/image-metal.mjs"
   },
   "engines": {"node": ">=18"}
 }

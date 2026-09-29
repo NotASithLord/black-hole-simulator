@@ -100,9 +100,11 @@ try {
   await flush();
   check('Max-fidelity startup calibrates, presents, and schedules the interactive loop',()=>{
     assert.equal(renderer.settings.quality,'max');assert.equal(renderer.settings.glowStrength,0);
-    assert.equal(traceCalls.length,1);assert.equal(renderCalls.length,1);assert.equal(raf.length,1);
+    assert.equal(traceCalls.length,2);assert.equal(renderCalls.length,1);assert.equal(raf.length,1);
     assert.equal(element('loading').hidden,true);
     assert.ok(traceCalls[0].width*traceCalls[0].height<=32768);
+    assert.ok(traceCalls[1].width*traceCalls[1].height<=262144);
+    assert.ok(traceCalls[1].width*traceCalls[1].height>traceCalls[0].width*traceCalls[0].height);
     assert.equal(element('universe').width,2560);assert.equal(element('universe').height,1600);
   });
   await step(16);await step(300);
@@ -330,7 +332,7 @@ try {
     assert.equal(renderer.settings.rotation,true);
   });
   check('Privacy-restricted adapter information falls back without stopping the app',()=>{
-    assert.equal(element('device').textContent,'WebGPU hardware adapter');
+    assert.equal(element('device').textContent,'WebGPU · hardware adapter');
     assert.equal(element('loading').hidden,true);
   });
   renderer.timingSerial=1000;renderer.gpuMS=100;renderer.queueMS=100;

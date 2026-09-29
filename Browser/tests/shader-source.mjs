@@ -1,12 +1,14 @@
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
+import './precision-arithmetic.mjs';
 
 // These tests evaluate scalar material expressions and isolated capture branches
 // extracted from WGSL using JavaScript. They verify source transformations and
 // observability, not GPU f32 accuracy, browser acceptance or runtime performance.
 const source=await readFile(new URL('../src/kerr.wgsl',import.meta.url),'utf8');
 const reference=await readFile(new URL('./fixtures/full-material-reference.wgsl',import.meta.url),'utf8');
+const compensationReference=await readFile(new URL('./fixtures/compensated-reference.wgsl',import.meta.url),'utf8');
 const clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
 const mix=(a,b,t)=>a+(b-a)*t;
 const smoothstep=(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t);};
@@ -116,6 +118,14 @@ function blockText(text,start) {
   return text.slice(start,end);
 }
 let protectedSource=source.slice(source.indexOf('fn finite('),source.indexOf('fn thermalSpectrum('));
+// The precision portability change is limited to ds/dn/da/dm and their integer
+// helpers. Restore its frozen original for the existing transport hash: the
+// integrators, tolerances, event conditions and every other equation remain
+// protected by the original digest. precision-metal.mjs executes these changed
+// arithmetic primitives under both fast and strict Metal compilation.
+const compensationStart=protectedSource.indexOf('fn ds('),compensationEnd=protectedSource.indexOf('fn dd(');
+assert(compensationStart>=0&&compensationEnd>compensationStart);
+protectedSource=protectedSource.slice(0,compensationStart)+compensationReference+protectedSource.slice(compensationEnd);
 for(const reference of captureReferences) {
   const body=functionText(source,reference.functionName).body;
   reference.current=blockText(body,body.indexOf(reference.condition));
@@ -126,7 +136,7 @@ for(const reference of captureReferences) {
   protectedSource=protectedSource.replace(reference.current,reference.original);
 }
 check(createHash('sha256').update(protectedSource).digest('hex')==='a162d3d1ee20e75a7cec26676b6ca2b142b34ae8515e9bb9157afc4fa57c8e6f',
-  'Apart from the two proven invisible capture refinements, transport, compensated integration, photosphere and redshift source remain unchanged');
+  'Apart from tested compensation primitives and two invisible capture refinements, transport equations, tolerances, photosphere and redshift source remain unchanged');
 
 // Evaluate the actual branch text with an instrumented endpoint solver. This is
 // control-flow/observability testing, not a JavaScript geodesic approximation.

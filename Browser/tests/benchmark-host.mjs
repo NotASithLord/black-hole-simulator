@@ -58,6 +58,8 @@ function host(options = {}) {
     samples: original.samples, canvas: {width: original.canvasWidth, height: original.canvasHeight},
     queries: options.timestamps === false ? undefined : {}, traceCount: 7,
     pendingFrames: 0, traceMS: 0, gpuMS: 0, emissionMS: 0, presentationMS: 0,
+    gpuTiming: null, timingGeneration: 0, frameWindow: {maxPending: 8},
+    timingHealth: {status: {available: options.timestamps !== false, suspended: false, validSamples: 0, invalidSamples: 0, lastFailure: null}},
     device: {queue: {async onSubmittedWorkDone() {
       events.push('drain'); drains++;
       if (options.drainFailures?.includes(drains)) throw faults.drain;
@@ -70,6 +72,7 @@ function host(options = {}) {
         canvasWidth: this.canvas.width, canvasHeight: this.canvas.height});
       if (options.restoreError && width === original.width && height === original.height) throw faults.restore;
       Object.assign(this, {width, height, samples, traceMS: 2.5}); now += 2.5;
+      this.gpuTiming = null; this.timingGeneration++;
       this.traceCount++;
       if (options.rebuildError && rebuilds.length === 1) throw new Error('injected rebuild failure');
       return true;
@@ -92,13 +95,17 @@ function host(options = {}) {
           if (Object.hasOwn(options.timings || {}, key)) this[key] = options.timings[key];
         }
       }
+      if(this.queries&&!options.missingTiming&&(!options.reusedTiming||!this.gpuTiming)) {
+        this.gpuTiming={ms:.6,at:now,generation:this.timingGeneration-(options.wrongGeneration?1:0)};
+        this.timingHealth.status.validSamples++;
+      }
       if (isAsync) {
         asynchronous++;
         if (options.asyncError && asynchronous === 1) throw new Error('injected async failure');
         if (options.dropAll || (options.singleAccepted && asynchronous !== 1) || asynchronous % 3 === 0) {
           this.pendingFrames = 2; return null;
         }
-        this.pendingFrames = options.excessBacklog ? 3 : asynchronous % 3;
+        this.pendingFrames = options.excessBacklog ? 9 : options.backlog??asynchronous % 3;
         return Object.hasOwn(options.timings || {}, 'submission') ? options.timings.submission : .03;
       }
       this.pendingFrames = 0;
@@ -169,15 +176,23 @@ try {
       ['motion-320', 320, 192, 1], ['motion-640', 640, 384, 1],
       ['full-source-320', 320, 192, 1], ['full-source-glow-320', 320, 192, 1],
       ['scientific-320', 320, 192, 1], ['finite-height-320', 320, 192, 1],
+      ['max-240', 240, 160, 4],
     ]);
-    assert.equal(fixture.measured, 240); assert.equal(fixture.reads, 6);
+    assert.equal(fixture.measured, 280); assert.equal(fixture.reads, 7);
     for (const scene of value.scenarios) {
       assert.equal(scene.cachedWallMS.count, 40); assert.equal(scene.gpuMS.count, 40);
       assert.equal(scene.emissionMS.count, 40); assert.equal(scene.presentationMS.count, 40);
       assert.equal(scene.nonfinite, 0); assert.equal(scene.unresolved, 1);
       assert.equal(scene.lit, scene.width * scene.height); assert.equal(scene.completedBacklog, 0);
-      assert.equal(scene.rayMapBytes, scene.width * scene.height * 16);
+      assert.equal(scene.rayMapBytes, scene.width * scene.height * scene.samples * 16);
+      assert.deepEqual(scene.timestampSamples,{requested:40,valid:40,unavailable:0});
+      assert.ok(scene.timestampHealth.validSamples>0);
     }
+    const max=value.scenarios.find(scene=>scene.name==='max-240');
+    assert.equal(max.quality,'max');assert.equal(max.integrationSteps,8192);
+    assert.equal(max.tolerance,3e-7);assert.equal(max.maxStep,.012);assert.equal(max.materialSamples,4);
+    assert.equal(fixture.rebuilds.find(call=>call.width===240).samples,4);
+    assert.match(value.timingNotes,/notification latency/);assert.match(value.timingNotes,/not GPU execution throughput or display FPS/);
     assert.deepEqual(value.cameraTraces.map(trace => trace.pitch), [.06, .2, .6, 1.1, .06]);
     assert.ok(value.cameraTraces.every(trace => trace.rays === 160 * 96));
     assert.deepEqual(value.resizeCycles.map(({width, height, glow}) => [width, height, glow]),
@@ -193,7 +208,8 @@ try {
     assert.equal(value.cadence.submissionMS.count, 80); assert.equal(value.cadence.callbackIntervalMS.count, 119);
     assert.ok(Number.isFinite(value.cadence.submittedFramesPerSecond));
     assert.ok(value.cadence.submittedFramesPerSecond > 0);
-    assert.equal(fixture.rebuilds.length, 18); fixture.assertRestored();
+    assert.equal(value.cadence.pendingLimit,8);
+    assert.equal(fixture.rebuilds.length, 19); fixture.assertRestored();
   });
 
   await test('Absent optional timestamps leave GPU summaries null while retaining all wall samples', async () => {
@@ -202,6 +218,8 @@ try {
     for (const scene of value.scenarios) {
       assert.equal(scene.cachedWallMS.count, 40); assert.equal(scene.gpuMS, null);
       assert.equal(scene.emissionMS, null); assert.equal(scene.presentationMS, null);
+      assert.deepEqual(scene.timestampSamples,{requested:40,valid:0,unavailable:40});
+      assert.equal(scene.timestampHealth.available,false);
     }
     fixture.assertRestored();
   });
@@ -220,7 +238,7 @@ try {
     fixture.assertRestored();
   });
 
-  for (const metric of ['wall', 'gpuMS', 'emissionMS', 'presentationMS', 'submission']) {
+  for (const metric of ['wall', 'submission']) {
     for (const invalid of [NaN, Infinity, -.1]) {
       await test(`${metric} rejects ${String(invalid)} timing rather than filtering it out of a completed report`, async () => {
         const fixture = host({timings: {[metric]: invalid}}), {error} = await fixture.run();
@@ -231,16 +249,55 @@ try {
     }
   }
 
-  await test('Quantized zero-duration samples remain valid in wall, GPU and submission summaries', async () => {
+  for(const metric of ['gpuMS','emissionMS','presentationMS']) {
+    for(const invalid of [NaN,Infinity,-.1]) {
+      await test(`${metric} ${String(invalid)} is omitted without aborting successful rendering`,async()=>{
+        const fixture=host({timings:{[metric]:invalid}}),{value,error}=await fixture.run();
+        assert.ifError(error);assert.equal(value.status,'completed');
+        for(const scene of value.scenarios) {
+          assert.equal(scene.cachedWallMS.count,40);assert.equal(scene.gpuMS,null);
+          assert.equal(scene.emissionMS,null);assert.equal(scene.presentationMS,null);
+          assert.deepEqual(scene.timestampSamples,{requested:40,valid:0,unavailable:40});
+        }
+        fixture.assertRestored();
+      });
+    }
+  }
+
+  for(const [name,options] of [['missing validated sample',{missingTiming:true}],['stale validated sample',{reusedTiming:true}],['old workload generation',{wrongGeneration:true}]]) {
+    await test(`Optional counters with ${name} do not repeat raw HUD numbers`,async()=>{
+      const fixture=host(options),{value,error}=await fixture.run();assert.ifError(error);
+      for(const scene of value.scenarios)assert.equal(scene.gpuMS,null);
+      fixture.assertRestored();
+    });
+  }
+
+  await test('Quantized zero wall and submission durations are retained without inventing zero GPU cost', async () => {
     const fixture = host({timings: {wall: 0, gpuMS: 0, emissionMS: 0, presentationMS: 0, submission: 0}});
     const {value, error} = await fixture.run(); assert.ifError(error);
     for (const scene of value.scenarios) {
-      for (const key of ['cachedWallMS', 'gpuMS', 'emissionMS', 'presentationMS']) {
-        assert.equal(scene[key].count, 40); assert.equal(scene[key].minimum, 0); assert.equal(scene[key].maximum, 0);
-      }
+      assert.equal(scene.cachedWallMS.count,40);assert.equal(scene.cachedWallMS.maximum,0);
+      for(const key of ['gpuMS','emissionMS','presentationMS'])assert.equal(scene[key],null);
     }
     assert.equal(value.cadence.submissionMS.count, 80); assert.equal(value.cadence.submissionMS.maximum, 0);
     fixture.assertRestored();
+  });
+
+  await test('A quantized individual pass remains reportable when the complete GPU span is positive',async()=>{
+    const fixture=host({timings:{emissionMS:0}}),{value,error}=await fixture.run();assert.ifError(error);
+    for(const scene of value.scenarios){assert.equal(scene.gpuMS.count,40);assert.equal(scene.emissionMS.maximum,0);}
+    fixture.assertRestored();
+  });
+
+  await test('Per-pass durations larger than the validated complete span are not reported',async()=>{
+    const fixture=host({timings:{emissionMS:3}}),{value,error}=await fixture.run();assert.ifError(error);
+    for(const scene of value.scenarios)assert.equal(scene.gpuMS,null);
+    fixture.assertRestored();
+  });
+
+  await test('The bounded eight-slot notification window is accepted without mistaking it for GPU overload',async()=>{
+    const fixture=host({backlog:8}),{value,error}=await fixture.run();assert.ifError(error);
+    assert.equal(value.cadence.peakBacklog,8);assert.equal(value.cadence.pendingLimit,8);fixture.assertRestored();
   });
 
   await test('Cleanup-only queue failure is surfaced after CPU settings and canvas restoration', async () => {
@@ -275,7 +332,7 @@ try {
     ['Unexpected cached-geometry retracing', {retrace: true}, /retraced geometry/],
     ['Nonfinite HDR', {nonfiniteHDR: true}, /invalid or empty HDR/],
     ['Empty HDR', {emptyHDR: true}, /invalid or empty HDR/],
-    ['GPU backlog greater than two', {excessBacklog: true}, /backlog exceeded two/],
+    ['GPU backlog greater than eight', {excessBacklog: true}, /backlog exceeded eight/],
     ['Initially hidden document', {initiallyHidden: true}, /keep this tab visible/],
     ['Hiding during warmup', {hideAtWarmup: true}, /keep this tab visible/],
     ['Hiding during measured rendering', {hideAtMeasured: 5}, /keep this tab visible/],

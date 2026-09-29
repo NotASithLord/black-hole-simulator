@@ -50,17 +50,16 @@ function queuedRenderer() {
 }
 {
   const{renderer,releases}=queuedRenderer();
-  assert.ok(Number.isFinite(await renderer.render(0,{wait:false})));
-  assert.ok(Number.isFinite(await renderer.render(1,{wait:false})));
-  assert.equal(renderer.pendingFrames,2);
-  assert.equal(await renderer.render(2,{wait:false}),null);
-  assert.equal(renderer.frame,2);assert.equal(releases.length,2);
+  for(let i=0;i<8;i++)assert.ok(Number.isFinite(await renderer.render(i,{wait:false})));
+  assert.equal(renderer.pendingFrames,8);
+  assert.equal(await renderer.render(8,{wait:false}),null);
+  assert.equal(renderer.frame,8);assert.equal(releases.length,8);
   releases.shift()();await Promise.resolve();await Promise.resolve();
-  assert.equal(renderer.pendingFrames,1);
-  assert.ok(Number.isFinite(await renderer.render(3,{wait:false})));
+  assert.equal(renderer.pendingFrames,7);
+  assert.ok(Number.isFinite(await renderer.render(9,{wait:false})));
   for(const release of releases)release();await Promise.resolve();await Promise.resolve();
-  assert.equal(renderer.pendingFrames,0);assert.equal(renderer.timingSerial,3);
-  console.log('PASS Interactive submission never waits per frame and caps backlog at two frames');
+  assert.equal(renderer.pendingFrames,0);assert.equal(renderer.timingSerial,9);assert.equal(renderer.frameWindow.pending,0);
+  console.log('PASS Interactive submission tolerates delayed callbacks with at most eight outstanding useful frames');
 }
 {
   const{renderer,releases}=queuedRenderer();let settled=false;

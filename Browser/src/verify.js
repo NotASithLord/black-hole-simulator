@@ -106,6 +106,7 @@ export async function verify(renderer, log = () => {}, {benchmark=false}={}) {
         expectedStatus: target[4], actualStatus: result[4], statusMatches: result[4] === target[4],
         initialConstantsError: Math.max(...[0, 1, 2].map(column => relative(result[column], target[column]))),
         initialNullResidual: result[3], finalNullResidual: result[11],
+        acceptedSteps: result[12], rejectedSteps: result[13], localError: result[14], minimumRadius: result[15],
         relativeRadius: relative(result[5], target[5]), azimuthRadians: azimuth,
         wrappedAzimuthRadians: Math.abs(Math.atan2(Math.sin(azimuth), Math.cos(azimuth))),
         relativeDelay: relative(result[7], target[7]),
@@ -127,6 +128,8 @@ export async function verify(renderer, log = () => {}, {benchmark=false}={}) {
     check('All 177 capture/disk/escape classifications match native', rows.length === 177 && rows.every(row => row.statusMatches), { matched: report.rays.classificationsMatched, total: rows.length });
     check('Initial Kerr constants agree numerically with native', finiteRows.length === 177 && maxConstants < 5e-5, { maximumNormalizedError: maxConstants, tolerance: 5e-5 });
     check('Initial null constraint remains bounded', finiteRows.length === 177 && maxInitialNull < 1e-4, { maximumResidual: maxInitialNull, tolerance: 1e-4 });
+    check('Final null constraint remains bounded', finiteRows.length === 177 && report.rays.maxFinalNullResidual < 3e-4,
+      {maximumResidual:report.rays.maxFinalNullResidual,tolerance:3e-4});
 
     log('Checking finite HDR output, disk movement and scientific isolation…');
     Object.assign(renderer.settings, {
@@ -161,7 +164,7 @@ export async function verify(renderer, log = () => {}, {benchmark=false}={}) {
     const sorted = [...times].sort((a, b) => a - b);
     report.performance = {
       width: renderer.width, height: renderer.height, samples: renderer.samples, frames: times.length,
-      metric: renderer.timingMethod || 'Submission-to-completion wall time; includes browser scheduling and is not isolated GPU execution time.',
+      metric: 'Serial submission-to-completion notification latency. Includes browser polling/scheduling; this rate is NOT live display FPS or isolated GPU execution time.',
       medianMS: percentile(sorted, 0.5), p95MS: percentile(sorted, 0.95), minimumMS: sorted[0], maximumMS: sorted.at(-1),
       totalWallMS: elapsed, cachedFramesPerSecond: times.length * 1000 / elapsed, frameTimesMS: times,
       traceCountBefore: profileTraces, traceCountAfter: renderer.traceCount,
@@ -201,6 +204,19 @@ export async function verify(renderer, log = () => {}, {benchmark=false}={}) {
     report.image.scientific = { first: scienceStats, last: scienceEndStats, difference: scientific };
     check('Scientific HDR images are finite and nonblack', scienceStats.finiteValues === scienceStats.values && scienceEndStats.finiteValues === scienceEndStats.values && scienceStats.litPixels > 100);
     check('Steady Scientific emission is time invariant', scientific.compatible && scientific.maxNormalized <= 1e-6, { ...scientific, tolerance: 1e-6 });
+    log('Checking the default four-ray Max-fidelity workload…');
+    Object.assign(renderer.settings,{quality:'max',appearance:'radiant',thickness:0,glowStrength:0,
+      cameraYaw:-.28,cameraPitch:.06,materialStrength:.9,fluctuations:0,playback:4000});
+    renderer.updateModel();await renderer.rebuild(240,160,4);await renderer.render(0);
+    const maxStart=(await renderer.readHDR()).slice();
+    await renderer.render(8000);const maxEnd=await renderer.readHDR();
+    const maxFirst=imageStatistics(maxStart),maxLast=imageStatistics(maxEnd),maxMotion=imageDifference(maxStart,maxEnd);
+    report.maxFidelity={width:240,height:160,samples:4,first:maxFirst,last:maxLast,motion:maxMotion};
+    check('Default Max-fidelity HDR is finite, visibly emitting and animated',
+      maxFirst.finiteValues===maxFirst.values&&maxLast.finiteValues===maxLast.values&&
+      maxFirst.litPixels>100&&maxMotion.changedPixels>10&&maxMotion.normalizedL1>1e-5);
+    check('Default Max-fidelity reference image has no unresolved rays',maxFirst.unresolvedPixels===0&&maxLast.unresolvedPixels===0,
+      {first:maxFirst.unresolvedPixels,last:maxLast.unresolvedPixels});
     if(benchmark) {
       const {benchmarkRenderer}=await import('./benchmark.js');
       report.benchmark=await benchmarkRenderer(renderer,log);
@@ -227,6 +243,7 @@ export async function verify(renderer, log = () => {}, {benchmark=false}={}) {
     check('No WebGPU validation errors during verification', errors.length === 0, { errors });
   }
   report.passed = checks.filter(item => item.passed).length;
+  report.timingHealth=renderer.timingHealth?.status??null;
   report.failed = checks.length - report.passed;
   report.status = report.failed === 0 ? 'passed' : 'failed';
   report.elapsedMS = performance.now() - started;

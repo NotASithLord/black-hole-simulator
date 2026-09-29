@@ -1,5 +1,7 @@
 // Production-renderer benchmarks. No software/WebGL substitute and no browser
 // flags. Results are workload-specific observations, not guaranteed display FPS.
+import {modes} from './renderer.js';
+
 export function summarize(values) {
   const sorted=values.filter(Number.isFinite).sort((a,b)=>a-b);
   if(!sorted.length) return null;
@@ -11,7 +13,7 @@ export async function benchmarkRenderer(renderer,log=()=>{}) {
   const original={settings:{...renderer.settings},width:renderer.width,height:renderer.height,samples:renderer.samples,
     canvasWidth:renderer.canvas.width,canvasHeight:renderer.canvas.height};
   const results={scope:'Real production WebGPU; fixed-workload comparisons, no UA-specific tuning',
-    timingNotes:'Wall timings include browser scheduling. GPU timestamps are optional and may be quantized. rAF throughput counts submitted frames, not compositor-confirmed display frames.',
+    timingNotes:'Serial cachedWallMS includes browser scheduling and queue-completion notification latency; its inverse is not GPU execution throughput or display FPS. GPU summaries use only fresh validated timestamp samples; unavailable or invalid timing stays null. rAF throughput counts submitted frames, not compositor-confirmed display frames.',
     scenarios:[],cameraTraces:[],resizeCycles:[],cadence:null};
   const base={spin:.82,mass:1e8,accretion:.1,outerRadius:30,cameraYaw:-.28,cameraPitch:.06,
     cameraDistance:80,fov:.48,lookYaw:0,lookPitch:0,thickness:0,appearance:'radiant',quality:'interactive',
@@ -24,6 +26,7 @@ export async function benchmarkRenderer(renderer,log=()=>{}) {
     {name:'full-source-glow-320',width:320,height:192,quality:'auto',glowStrength:.28},
     {name:'scientific-320',width:320,height:192,quality:'auto',appearance:'scientific'},
     {name:'finite-height-320',width:320,height:192,thickness:.75},
+    {name:'max-240',width:240,height:160,quality:'max',samples:4},
   ];
   function visible() {
     if(document.hidden) throw new Error('Benchmark interrupted: keep this tab visible for comparable timings.');
@@ -32,20 +35,29 @@ export async function benchmarkRenderer(renderer,log=()=>{}) {
   try {
     for(const scene of scenarios) {
       visible();log(`Benchmark: ${scene.name}…`);
-      const {name,width,height,...settings}=scene;
+      const {name,width,height,samples=1,...settings}=scene;
       Object.assign(renderer.settings,base,settings);renderer.updateModel();
       renderer.canvas.width=width;renderer.canvas.height=height;
-      const begin=performance.now();await renderer.rebuild(width,height,1);
+      const begin=performance.now();await renderer.rebuild(width,height,samples);
       const traceWallMS=performance.now()-begin;
       for(let i=0;i<8;i++) {visible();await renderer.render(8000+i*4000/60);}
       const traces=renderer.traceCount,wall=[],gpu=[],emission=[],presentation=[];
       const observedWork=[];
       for(let i=0;i<40;i++) {
+        const previousTiming=renderer.gpuTiming;
         visible();wall.push(await renderer.render(9000+i*4000/60,{measure:true}));
-        if(renderer.queries) {gpu.push(renderer.gpuMS);emission.push(renderer.emissionMS);presentation.push(renderer.presentationMS);}
+        const timing=renderer.gpuTiming;
+        // A present query feature is not proof of usable measurements. Suspended
+        // queries retain no new sample; never repeat the previous HUD numbers.
+        if(timing&&timing!==previousTiming&&timing.generation===renderer.timingGeneration&&
+          Number.isFinite(timing.ms)&&timing.ms>0&&Number.isFinite(renderer.gpuMS)&&renderer.gpuMS>0&&
+          [renderer.emissionMS,renderer.presentationMS].every(value=>Number.isFinite(value)&&value>=0)&&
+          renderer.emissionMS+renderer.presentationMS<=renderer.gpuMS+1e-6) {
+          gpu.push(renderer.gpuMS);emission.push(renderer.emissionMS);presentation.push(renderer.presentationMS);
+        }
         observedWork.push(renderer.pendingFrames);
       }
-      if([wall,gpu,emission,presentation].some(values=>values.some(value=>!Number.isFinite(value)||value<0)))
+      if(wall.some(value=>!Number.isFinite(value)||value<0))
         throw new Error(`${name}: invalid timing sample`);
       if(renderer.traceCount!==traces) throw new Error(`${name}: cached animation unexpectedly retraced geometry`);
       const pixels=await renderer.readHDR();let nonfinite=0,unresolved=0,lit=0;
@@ -54,9 +66,13 @@ export async function benchmarkRenderer(renderer,log=()=>{}) {
         if(pixels[i+3]<0)unresolved++;
         if(Math.max(pixels[i],pixels[i+1],pixels[i+2])>1e-6)lit++;
       }
-      results.scenarios.push({name,width,height,presentationWidth:renderer.canvas.width,presentationHeight:renderer.canvas.height,samples:1,traceWallMS,traceMS:renderer.traceMS,
+      const mode=modes[renderer.settings.quality];
+      results.scenarios.push({name,width,height,presentationWidth:renderer.canvas.width,presentationHeight:renderer.canvas.height,samples,
+        quality:renderer.settings.quality,integrationSteps:mode.steps,tolerance:mode.tolerance,maxStep:mode.maxStep,
+        materialSamples:mode.materialSamples??(renderer.settings.quality==='max'?4:renderer.settings.quality==='efficient'?1:2),traceWallMS,traceMS:renderer.traceMS,
         cachedWallMS:summarize(wall),gpuMS:summarize(gpu),emissionMS:summarize(emission),presentationMS:summarize(presentation),
-        pixels:width*height,nonfinite,unresolved,lit,completedBacklog:Math.max(...observedWork),rayMapBytes:width*height*16});
+        timestampSamples:{requested:40,valid:gpu.length,unavailable:40-gpu.length},timestampHealth:renderer.timingHealth?.status??null,
+        pixels:width*height,nonfinite,unresolved,lit,completedBacklog:Math.max(...observedWork),rayMapBytes:width*height*samples*16});
       if(nonfinite||!lit) throw new Error(`${name}: invalid or empty HDR output`);
     }
 
@@ -100,9 +116,10 @@ export async function benchmarkRenderer(renderer,log=()=>{}) {
       frameId=requestAnimationFrame(frame);
     });
     await renderer.device.queue.onSubmittedWorkDone();
-    results.cadence={callbacks,submitted,dropped,peakBacklog,callbackIntervalMS:summarize(gaps),submissionMS:summarize(submissionCosts),
+    results.cadence={callbacks,submitted,dropped,peakBacklog,pendingLimit:renderer.frameWindow?.maxPending??8,
+      timestampHealth:renderer.timingHealth?.status??null,callbackIntervalMS:summarize(gaps),submissionMS:summarize(submissionCosts),
       elapsedMS:last-first,submittedFramesPerSecond:submitted>1?(submitted-1)*1000/Math.max(lastAccepted-firstAccepted,1):0,targetResolution:[320,192]};
-    if(peakBacklog>2)throw new Error('Asynchronous GPU backlog exceeded two frames');
+    if(peakBacklog>8)throw new Error('Asynchronous GPU backlog exceeded eight frames');
     results.status='completed';
   } catch(error) {
     originalError=error;throw error;

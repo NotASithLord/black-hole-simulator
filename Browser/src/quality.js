@@ -3,6 +3,15 @@ const finitePositive = (value, fallback) => Number.isFinite(value) && value > 0 
 const clamp = (value, minimum, maximum) => Math.min(maximum, Math.max(minimum, value));
 const tileFloor = value => Math.floor(value / 8) * 8;
 
+/** Amortize cold startup/fence delivery with at most two larger useful probes.
+ * Never subtract an assumed browser delay or exceed a fixed ray-count ceiling.
+ * Wall time remains a conservative bound, not an isolated GPU measurement. */
+export function nextCalibrationPixels(pixels, traceMS) {
+  if(!Number.isFinite(pixels)||pixels<=0||!Number.isFinite(traceMS)||traceMS<=0||traceMS>1500)return 0;
+  const next=Math.floor(Math.min(262144,pixels*8,pixels/traceMS*600));
+  return next>=pixels*1.8?next:0;
+}
+
 /**
  * Choose one bounded GPU ray map. Width/height describe the already DPR-capped
  * canvas. A known throughput always wins over bootstrap minimumPixels: weak
@@ -132,7 +141,15 @@ export class AdaptiveRetracePolicy {
       ||(direction>0&&evidence.observedMS>=evidence.budgetMS)) {
       this.count=0;this.direction=0;return false;
     }
-    if (generation!==this.generation||direction!==this.direction||now-this.lastSampleAt>3000) {
+    // Completed-frame windows become naturally sparse under real overload:
+    // 64 intervals at 10 FPS take 6.4 seconds. Treat that measured window length
+    // as cadence, NOT as GPU execution time. Leave room for policy polling, but
+    // never let a long/malformed window preserve old votes indefinitely. GPU
+    // samples and legacy evidence retain the original three-second idle reset.
+    const gapMS=evidence.source==='throughput'&&now-evidence.at<=2000&&
+      Number.isFinite(evidence.durationMS)&&evidence.durationMS>0
+      ? Math.max(3000,Math.min(30000,evidence.durationMS*1.5+1000)):3000;
+    if (generation!==this.generation||direction!==this.direction||now-this.lastSampleAt>gapMS) {
       this.generation=generation;this.direction=direction;this.count=0;this.lastSampleAt=-Infinity;
       this.lastEvidenceAt=-Infinity;
     }
@@ -171,7 +188,7 @@ export function advanceDeadline(now, deadline, interval) {
  * settings change, and captures that generation at submission (not callback).
  *
  * gpu: { ms, generation, at } for one timestamped frame.
- * completion: { ms, samples, generation, at }; ms is mean completed-frame interval,
+ * completion: { ms, samples, generation, at, durationMS? }; ms is mean completed-frame interval,
  * samples counts the intervals in that window, not pending/submitted frames.
  * All times are monotonic milliseconds; `at` is sample/window completion time.
  * Return null until current, sufficiently sampled evidence exists.
@@ -189,7 +206,12 @@ export function adaptiveTiming({ generation, now, intervalMS, gpu, completion, m
   if (fresh(completion) && Number.isInteger(completion.samples) && completion.samples >= 8
     && Number.isFinite(completion.ms) && completion.ms > 0
     && Number.isFinite(completion.ms * completion.samples) && completion.ms * completion.samples >= 100) {
-    return { observedMS: completion.ms, budgetMS: intervalMS, source: 'throughput', at: completion.at };
+    const durationMS=completion.ms*completion.samples;
+    // Older reports omit durationMS; the average and interval count reconstruct
+    // it exactly. A contradictory explicit duration cannot extend vote lifetime.
+    if(completion.durationMS!==undefined&&(!Number.isFinite(completion.durationMS)||
+      Math.abs(completion.durationMS-durationMS)>Math.max(.001,durationMS*1e-6)))return null;
+    return { observedMS: completion.ms, budgetMS: intervalMS, source: 'throughput', at: completion.at,durationMS };
   }
   return null;
 }

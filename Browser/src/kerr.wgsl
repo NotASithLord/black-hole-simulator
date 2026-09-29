@@ -124,18 +124,51 @@ fn crossing(old: State,next: State,c: Constants,h: f32,component: u32,crossingVa
     return rk45(old,c,h*x).value;
 }
 fn ds(x: f32) -> vec2<f32> { return vec2<f32>(x,0.0); }
-fn dn(h: f32,l: f32) -> vec2<f32> { let s=h+l; return vec2<f32>(s,l-(s-h)); }
+// Recover rounding errors from integer significands, not floating-point
+// cancellation. WGSL permits reassociation, and Metal fast math can erase the
+// error-free transforms used by native code compiled with fast math disabled.
+// Unsigned wraparound is intentional: the exact residual fits in i32 when its
+// u32 bit pattern is reinterpreted, even if aligned significands overflow u32.
+fn significand(bits: u32) -> u32 {
+    return (bits&0x007fffffu)|select(0u,0x00800000u,(bits&0x7f800000u)!=0u);
+}
+fn signedSignificand(bits: u32) -> u32 {
+    let magnitude=significand(bits);
+    return select(magnitude,0u-magnitude,(bits&0x80000000u)!=0u);
+}
+fn dn(h: f32,l: f32) -> vec2<f32> {
+    var a=h; var b=l;
+    if(abs(a)<abs(b)) { a=l; b=h; }
+    let ab=bitcast<u32>(a); let bb=bitcast<u32>(b);
+    let ae=max((ab>>23u)&255u,1u); let be=max((bb>>23u)&255u,1u);
+    let gap=ae-be;
+    // The smaller operand is already a non-overlapping low component.
+    if(gap>24u) { return vec2<f32>(a,b); }
+    let high=a+b; let hb=bitcast<u32>(high); let he=max((hb>>23u)&255u,1u);
+    // Cancellation in this range is exact (Sterbenz's lemma), including zero.
+    if(he<=be) { return vec2<f32>(high,0.0); }
+    let errorBits=(signedSignificand(ab)<<gap)+signedSignificand(bb)-(signedSignificand(hb)<<(he-be));
+    let low=ldexp(f32(bitcast<i32>(errorBits)),i32(be)-150);
+    return vec2<f32>(high,low);
+}
 fn da(a: vec2<f32>,b: vec2<f32>) -> vec2<f32> {
-    let s=a.x+b.x; let v=s-a.x;
-    return dn(s,(a.x-(s-v))+(b.x-v)+a.y+b.y);
+    let sum=dn(a.x,b.x);
+    return dn(sum.x,sum.y+a.y+b.y);
 }
 fn dm(a: vec2<f32>,b: vec2<f32>) -> vec2<f32> {
     let p=a.x*b.x;
-    // WGSL fma may be unfused. Bit splitting obtains exact 12-bit high parts
-    // without the overflow risk of multiplying by a floating-point splitter.
-    let ah=bitcast<f32>(bitcast<u32>(a.x)&0xfffff000u); let al=a.x-ah;
-    let bh=bitcast<f32>(bitcast<u32>(b.x)&0xfffff000u); let bl=b.x-bh;
-    let residual=((ah*bh-p)+ah*bl+al*bh)+al*bl;
+    let ab=bitcast<u32>(a.x); let bb=bitcast<u32>(b.x); let pb=bitcast<u32>(p);
+    let ae=i32((ab>>23u)&255u); let be=i32((bb>>23u)&255u); let pe=i32((pb>>23u)&255u);
+    // Wide transport values and their nonzero products are normal f32s. Zero
+    // has no multiplication residual. Underflowed residuals may flush to zero,
+    // as permitted by WGSL; they are far below the solver's 1e-13 floor.
+    var residual=0.0;
+    if(ae!=0 && be!=0 && pe!=0) {
+        let shift=u32(pe-ae-be+150);
+        let errorBits=significand(ab)*significand(bb)-(significand(pb)<<shift);
+        let magnitude=ldexp(f32(bitcast<i32>(errorBits)),ae+be-300);
+        residual=select(magnitude,-magnitude,((ab^bb)&0x80000000u)!=0u);
+    }
     return dn(p,residual+a.x*b.y+a.y*b.x+a.y*b.y);
 }
 fn dd(a: vec2<f32>,b: vec2<f32>) -> vec2<f32> {

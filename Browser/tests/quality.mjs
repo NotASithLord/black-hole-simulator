@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { chooseRenderSize, adaptiveResolutionScale, adaptiveTiming, AdaptiveRetracePolicy, advanceDeadline } from '../src/quality.js';
+import { chooseRenderSize, adaptiveResolutionScale, adaptiveTiming, AdaptiveRetracePolicy, advanceDeadline, nextCalibrationPixels } from '../src/quality.js';
 
 let checks = 0;
 function check(name, condition) { assert.ok(condition, name); checks++; console.log(`PASS ${name}`); }
@@ -237,6 +237,85 @@ check('Invalid/future timing is excluded from adaptation',
   && adaptiveTiming({ ...timingContext, gpu: { generation: 3, at: 10001, ms: 1 } }) === null
   && adaptiveTiming({ ...timingContext, completion: { ...completion60, samples: Infinity } }) === null);
 
+const slowCompletion={generation:1,at:6400,ms:100,samples:64,durationMS:6400};
+const slowContext={generation:1,now:6400,intervalMS:1000/60,completion:slowCompletion};
+const sparseEvidence=adaptiveTiming(slowContext);
+check('Slow completion evidence retains its actual window duration without becoming GPU execution time',
+  sparseEvidence.durationMS===6400&&sparseEvidence.observedMS===100&&sparseEvidence.budgetMS===1000/60&&sparseEvidence.source==='throughput');
+check('Legacy completion reports reconstruct the same duration from interval count and mean',
+  adaptiveTiming({...slowContext,completion:{...slowCompletion,durationMS:undefined}}).durationMS===6400);
+check('A contradictory or nonfinite reported duration cannot extend the adaptation evidence lifetime',
+  [0,-1,12800,NaN,Infinity].every(durationMS=>adaptiveTiming({...slowContext,completion:{...slowCompletion,durationMS}})===null));
+check('GPU execution evidence does not acquire a completion-window duration',
+  adaptiveTiming({...slowContext,gpu:{generation:1,at:6400,ms:5,durationMS:6400}}).durationMS===undefined);
+for(const [durationMS,samples] of [[3200,64],[6400,64],[5000,50],[5000,25],[8000,8],[16000,8]]) {
+  const policy=new AdaptiveRetracePolicy();let approvals=0;
+  // Polling is intentionally not phase-aligned with the completion windows.
+  // Samples expire after two seconds even while the next long window is built.
+  for(let now=1200;now<=Math.max(48000,durationMS*4);now+=1200) {
+    const at=Math.floor(now/durationMS)*durationMS;
+    const evidence=at?adaptiveTiming({generation:1,now,intervalMS:1000/60,
+      completion:{generation:1,at,ms:durationMS/samples,samples,durationMS}}):null;
+    if(policy.consider({...overload,now,evidence}))approvals++;
+  }
+  check(`${samples*1000/durationMS} FPS completion-only overload can accumulate three independent windows despite slow policy polling`,approvals>0);
+}
+const sparseRequest=(now,generation=1,extra={})=>({...overload,now,generation,
+  evidence:{...sparseEvidence,at:now,...extra}});
+{
+  const policy=new AdaptiveRetracePolicy();
+  assert.equal(policy.consider(sparseRequest(6400)),false);
+  assert.equal(policy.consider(sparseRequest(12800)),false);
+  check('Three independent 6.4-second completion windows can authorize a useful downgrade',policy.consider(sparseRequest(19200)));
+}
+{
+  const policy=new AdaptiveRetracePolicy();
+  policy.consider(sparseRequest(6400));policy.consider(sparseRequest(12800));
+  assert.equal(policy.count,2);
+  check('A long idle gap still discards votes even for slow completion windows',!policy.consider(sparseRequest(30000))&&policy.count===1);
+}
+{
+  const policy=new AdaptiveRetracePolicy();
+  policy.consider(sparseRequest(6400));
+  check('Changing the workload generation resets slow-window adaptation evidence',
+    !policy.consider(sparseRequest(12800,2))&&!policy.consider(sparseRequest(19200,2))&&policy.count===2);
+  policy.reset(20000);
+  check('Explicit idle/rebuild reset also clears long-window votes',!policy.consider(sparseRequest(25600,2))&&policy.count===1);
+}
+{
+  const policy=new AdaptiveRetracePolicy();
+  policy.consider(sparseRequest(6400));policy.consider(sparseRequest(12800));
+  for(const now of [14000,15000,16000]) {
+    const evidence=adaptiveTiming({...slowContext,now,completion:{...slowCompletion,at:12800}});
+    assert.equal(policy.consider({...overload,now,evidence}),false);
+  }
+  check('Repeated or expired slow-window evidence never provides an additional vote',policy.count===2);
+  check('Long-window evidence remains subject to the original two-second freshness bound',
+    adaptiveTiming({...slowContext,now:8401})===null);
+}
+for(const extra of [{source:'gpu'},{durationMS:NaN},{durationMS:Infinity},{durationMS:-1},{durationMS:0}]) {
+  const policy=new AdaptiveRetracePolicy();
+  policy.consider(sparseRequest(20000,1,extra));policy.consider(sparseRequest(23201,1,extra));
+  check(`GPU or invalid-duration evidence retains the three-second idle reset (${JSON.stringify(extra)})`,policy.count===1);
+}
+{
+  const policy=new AdaptiveRetracePolicy();
+  policy.consider(sparseRequest(20000,1,{durationMS:1e12}));
+  policy.consider(sparseRequest(50001,1,{durationMS:1e12}));
+  check('Even enormous completion windows cannot retain adaptation votes beyond thirty seconds',policy.count===1);
+}
+{
+  const policy=new AdaptiveRetracePolicy();
+  const request=now=>({...overload,now,evidence:adaptiveTiming({generation:1,now,intervalMS:1000/60,
+    completion:{generation:1,at:now,ms:2000,samples:8,durationMS:16000}})});
+  policy.consider(request(16000));policy.consider(request(32000));assert.equal(policy.count,2);
+  policy.reset(34000);
+  check('An explicit idle-wake reset flushes even sub-one-FPS slow-window votes',
+    !policy.consider(request(48000))&&policy.count===1);
+  check('A severely overloaded workload can accumulate fresh slow windows after that reset',
+    !policy.consider(request(64000))&&policy.consider(request(80000)));
+}
+
 const frameInterval = 1000 / 60;
 let deadline = 0, rendered = 0;
 for (let frame = 0; frame < 600; frame++) {
@@ -288,4 +367,9 @@ for(const width of [80,400,1920])for(const height of [64,300,1080])for(const sca
   }
 }
 check(`${supersamplingCases} supersampling combinations retain mode, trace-time, memory and texture bounds`,true);
+check('Fast cold probe grows to a bounded useful warm probe',nextCalibrationPixels(32768,20)===262144);
+check('Notification-dominated probe grows without subtracting an assumed browser delay',nextCalibrationPixels(32768,200)===98304);
+check('Slow initial probe does not amplify a weak adapter workload',nextCalibrationPixels(32768,1400)===0&&nextCalibrationPixels(32768,1600)===0);
+check('Calibration never repeats its largest probe',nextCalibrationPixels(262144,20)===0);
+check('Invalid calibration measurements cannot request more work',[0,-1,NaN,Infinity].every(ms=>nextCalibrationPixels(32768,ms)===0));
 console.log(`${checks}/${checks} pure quality and pacing checks passed.`);

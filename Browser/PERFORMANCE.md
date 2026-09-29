@@ -1,5 +1,61 @@
 # Source and cross-engine optimization review
 
+## Firefox precision and completion delivery — 2026-09-29
+
+Live Firefox Developer Edition 157.0b4 on Apple M4 reproduced three problems:
+165/177 reference ray classifications passed (all twelve failures were near the
+critical capture boundary), timestamp spans could be negative, and serial GPU
+completion notifications arrived at roughly 100 ms even for much cheaper work.
+The public Max Fidelity view was consequently very low resolution. These are
+pre-fix observations, not a claim that the updated browser build has passed.
+
+The same production WGSL translated with pinned Naga reproduced **exactly those
+twelve failures** when Metal fast math was enabled; strict math passed 177/177.
+The compensated arithmetic now reconstructs rounding residuals from integer
+significands, preventing floating-point reassociation from erasing them. The
+patched shader passes **177/177 in both compiler modes**, plus 4,096 actual-GPU
+arithmetic cases with worst relative error below 8.77e-15. Kerr equations,
+integration tolerances, classification criteria and shared Swift/WASM physics
+are unchanged. The source-hash guard normalizes only the separately tested
+compensation helpers and the two previously approved captured-ray guards.
+
+Actual-GPU image checks also pass with fast math on and off: four-ray Max Fidelity
+at 240×160 and one-ray Auto at 480×320 have no unresolved rays or pixels, finite
+HDR output, visible emission and changing disk material at source times 0/8000.
+Each image pair reuses one traced map. These execute production Naga-translated
+transport/shading with the real Swift-WASM tables, not a mock GPU; browser canvas
+presentation and live submission performance are outside this harness's scope.
+
+Firefox's coarse completion polling is tracked in
+[Mozilla bug 1870699](https://bugzilla.mozilla.org/show_bug.cgi?id=1870699).
+The renderer now measures delivery at startup: prompt hosts keep two pending
+frames/strips, while coarse hosts permit a bounded eight-slot window of useful
+work. Trace submissions are paced on coarse hosts; real completion still owns
+resource retirement. A 250 ms age limit stops new submissions when notifications
+stall. No empty rendering work or assumed 100 ms timing subtraction is used.
+
+GPU query counters are validated in integer space before subtraction. Reversed,
+zero, repeated and implausible samples cannot control quality or abort the
+benchmark. Persistent faults temporarily disable optional timing and retry with
+backoff. Invalid queries are reported as unavailable, not as GPU utilization.
+Fallback cadence averages longer windows to tolerate batched notifications.
+Startup calibration may use two larger, bounded useful traces to amortize cold
+pipeline/delivery costs instead of locking resolution to one tiny cold probe.
+
+Reproduce the actual-GPU arithmetic result on macOS:
+
+```sh
+npm --prefix Browser test
+npm --prefix Browser run check:precision-metal
+npm --prefix Browser run check:image-metal
+node Browser/tests/precision-metal.mjs --baseline
+```
+
+The frozen baseline intentionally asserts the original twelve fast-math failures.
+This native Naga→Metal harness is **not an end-to-end browser test**. Post-fix
+Firefox visual/FPS verification and equal-workload Chrome/Safari comparisons
+remain pending; no cross-engine speedup or 85–90% device-utilization claim is made.
+
 ## Cached-animation stability correction — 2026-09-29
 
 The initial high-utilization pass exposed a control-loop regression: automatic
@@ -144,16 +200,17 @@ its historical C-to-C performance measurements are retained below.
 Four parallel review tracks covered compiled source physics, shader arithmetic,
 the application lifecycle, and WebGPU camera/resource portability. Source-level
 changes were validated before browser-specific work. Native Swift/Metal files
-were not modified in that September 27 pass. Motion first remains the default.
+were not modified in that September 27 pass. Motion first was the default then;
+the current default is Max Fidelity.
 
-**Cross-engine GPU validation is still pending.** The following installed versions
-were recorded on the development machine, not validated by rendering this build:
+**Post-fix cross-engine GPU validation is still pending.** Earlier installed
+versions and available observations are listed below:
 
 | Engine | Installed browser | Project GPU result |
 | --- | --- | --- |
 | Chromium/Blink + Dawn | Chrome 153.0.8010.53 | Not run |
 | WebKit | Safari 26.6.2 | Not run |
-| Gecko + wgpu | Firefox 155.0; Developer Edition 157.0 | Not run |
+| Gecko + wgpu | Firefox 155.0; Developer Edition 157.0b4 | Pre-fix 165/177 rays; see current investigation above |
 
 Vendor support is documented for [Chrome on macOS](https://developer.chrome.com/docs/web-platform/webgpu/overview),
 [Safari 26](https://webkit.org/blog/17333/webkit-features-in-safari-26-0/), and
@@ -284,7 +341,7 @@ http://127.0.0.1:8765/?benchmark=1
 ```
 
 The expanded path runs the existing 177-ray native-reference regression and image
-checks, followed by six fixed source/presentation workloads, warmup + 40 measured
+checks, followed by seven fixed source/presentation workloads (including four-ray Max Fidelity), warmup + 40 measured
 cached frames per workload, five camera traces, six resize/glow transitions, and
 120 animation-frame callbacks with bounded asynchronous submissions. The test
 aborts on hidden tabs instead of reporting background-throttled results. Controls

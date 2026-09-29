@@ -82,17 +82,25 @@ not part of the deployed app, and no system compiler files are modified.
 For a stationary camera and geometry, expensive ray paths are reused while the
 disk continues rotating. Camera/geometry changes retrace those paths. The trace
 is split into bounded strips so the page can report progress and accept input
-during a rebuild. Up to two strips remain queued, overlapping browser completion
-delivery with GPU work; each strip remains capped at 64 rows and targets roughly
-8 ms using measured wall throughput. Cancellation drains both before replacing
-resources. These are scheduling bounds, not guaranteed GPU durations.
+during a rebuild. A three-copy startup probe measures completion notification
+delivery, not GPU speed. Prompt hosts retain two queued strips and an 8 ms wall
+throughput target. Coarse-delivery hosts use paced useful submissions, at most
+eight outstanding strips, and a 32 ms target. Each strip is bounded by 64 rows
+and a 65,536-ray target (with an irreducible eight-row minimum). Cancellation
+drains actual completions before replacing resources. These are scheduling
+bounds, not guaranteed GPU durations; no browser-name check selects the policy.
 Camera input does not repeatedly cancel the in-flight camera
 snapshot: a completed low-resolution view is presented, then the newest pose is
 traced. Physical-model changes still cancel incompatible maps. Tables are rebuilt
 and uploaded only when physical parameters change, not on camera movements.
 Animation uses the GPU cache and a small parameter update. Interactive frames
-are submitted without awaiting GPU completion on every frame, with at most two
-outstanding frames to bound latency. Timing readbacks happen asynchronously.
+are submitted without awaiting GPU completion on every frame. Prompt hosts use
+two outstanding frames; coarse hosts allow up to eight, narrowed by valid GPU
+cost measurements and stopped by a 250 ms oldest-notification guard. Elapsed
+time never retires a submission. Timing readbacks happen asynchronously; invalid
+timestamp counters are discarded without failing rendering. Persistent timing
+failures suspend instrumentation with bounded recovery probes. Longer completed-
+frame windows provide fallback throughput, never an invented GPU execution time.
 Paused/static views and hidden pages stop issuing unnecessary frames and stop
 polling animation callbacks entirely. Input wakes a single loop; delayed
 refinement uses one scheduled event rather than repeated idle polling.
@@ -248,6 +256,13 @@ and frame cadence; `tests/camera-host.mjs` checks lazy glare allocation and pass
 scheduling. `tests/app-host.mjs` exercises the actual application loop with a
 mock DOM and queue: continuous dragging, pause/resume, visibility changes and
 source-clock continuity. `npm test` inside `Browser/` runs the offline checks.
+On a Metal-capable Mac, `npm run check:precision-metal` additionally translates
+the production WGSL with Naga and executes the 177 reference rays plus 4,096
+arithmetic cases with Metal fast math both enabled and disabled. This tests the
+shader arithmetic backend, not a browser's API, scheduling or presentation.
+`npm run check:image-metal` also executes production transport and shading for
+fixed Max/Auto images, checking finite HDR, resolved rays and disk animation with
+the actual Swift-WASM tables. It likewise does not claim browser compatibility.
 
 For GPU/browser verification, run the included local server and open:
 

@@ -14,5 +14,8 @@ export function runtimeInfo(renderer) {
     adapter:adapter?Object.fromEntries(['vendor','architecture','device','description'].map(k=>[k,adapter.info?.[k]||'undisclosed'])):null,
     features:adapter?Array.from(adapter.features||[]).sort():[],
     deviceLimits:device?Object.fromEntries(names.map(k=>[k,device.limits[k]])):null,
-    timestampQuery:!!renderer?.queries,startupMS:renderer?.startupMS??null};
+    timestampQuery:!!renderer?.queries,timestampHealth:renderer?.timingHealth?.status??null,
+    startupMS:renderer?.startupMS??null,calibration:renderer?.calibration??null,
+    completionDelivery:renderer?.completionDelivery??null,
+    pendingFrameLimit:renderer?.frameWindow?.maxPending??null};
 }

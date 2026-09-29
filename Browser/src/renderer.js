@@ -1,5 +1,9 @@
 import {CameraResponse} from './camera.js';
 import {traceRows} from './trace-queue.js';
+import {GPUTimingHealth} from './gpu-timing.js';
+import {BoundedSubmissionWindow} from './submission-window.js';
+import {measureCompletionDelivery} from './completion-probe.js';
+import {CompletionCadence} from './completion-cadence.js';
 
 export const defaults = {
   spin:.82, mass:1e8, accretion:.1, outerRadius:30, thickness:0,
@@ -26,11 +30,14 @@ export class KerrRenderer {
     this.uniformBytes=new ArrayBuffer(176);this.uniformView=new DataView(this.uniformBytes);
     this.emissionMS=0;this.presentationMS=0;
     this.timingGeneration=0;this.gpuTiming=null;this.completionTiming=null;
-    this.completionWindowStart=null;this.completionWindowCount=0;
+    this.completionCadence=new CompletionCadence();
+    this.timingHealth=new GPUTimingHealth({available:false});
+    this.frameWindow=new BoundedSubmissionWindow();this.frameCompletions=new Set();
+    this.tracePace=null;
   }
   resetTiming() {
     this.timingGeneration++;this.gpuTiming=null;this.completionTiming=null;
-    this.completionWindowStart=null;this.completionWindowCount=0;
+    this.completionCadence.reset(this.timingGeneration);
     this.gpuMS=0;this.queueMS=0;this.emissionMS=0;this.presentationMS=0;
   }
   async init() {
@@ -51,6 +58,7 @@ export class KerrRenderer {
     this.adapter=adapter;
     if(!this.adapter) throw Error('No WebGPU adapter is available. Check browser graphics acceleration.');
     const timestamp=this.adapter.features.has('timestamp-query');
+    this.timingHealth=new GPUTimingHealth({available:timestamp});
     // Request enough supported storage for the highest useful ray-map size,
     // including chooseRenderSize's 10% reserve. Requesting a limit allocates
     // nothing; actual maps remain viewport-, calibration- and memory-bounded.
@@ -104,6 +112,10 @@ export class KerrRenderer {
       this.queryResolve=this.device.createBuffer({size:32,usage:GPUBufferUsage.QUERY_RESOLVE|GPUBufferUsage.COPY_SRC});
       this.queryRead=this.device.createBuffer({size:32,usage:GPUBufferUsage.MAP_READ|GPUBufferUsage.COPY_DST});
     }
+    this.completionDelivery=await measureCompletionDelivery(this.device);
+    const coarse=this.completionDelivery.coarseCompletion;
+    this.tracePace=coarse?()=>new Promise(resolve=>setTimeout(resolve,16)):null;
+    this.frameWindow=new BoundedSubmissionWindow({maxPending:coarse?8:2});
     this.startupMS=performance.now()-start;
   }
   updateModel() {
@@ -159,10 +171,12 @@ export class KerrRenderer {
     const start=performance.now();
     // Use only completed traces to seed the next bounded chunk. The first map
     // still starts at one workgroup row; all chunks retain the watchdog cap.
-    const predictedRows=Number.isFinite(this.raysPerMS)?this.raysPerMS*8/(width*samples):0;
-    // Queue one successor so browser fence delivery does not leave the device
-    // idle between strips. Both chunks remain capped and retire on cancellation.
+    const targetMS=this.tracePace?32:8;
+    const predictedRows=Number.isFinite(this.raysPerMS)?this.raysPerMS*targetMS/(width*samples):0;
+    // Prompt hosts queue one successor; coarse completion delivery uses paced,
+    // bounded useful strips. Every slot still retires on actual completion.
     const complete=await traceRows({height,initialRows:predictedRows,cancel,progress,
+      pace:this.tracePace,targetMS,maxRows:Math.max(8,Math.floor(65536/(width*samples)/8)*8),
       submit:(row,rows)=>{
         traceView.setFloat32(108,row,true);
         this.device.queue.writeBuffer(this.uniform,0,traceUniforms);
@@ -182,9 +196,8 @@ export class KerrRenderer {
     this.raysPerMS=width*height*samples/this.traceMS;return true;
   }
   async render(timeSeconds=0,{wait=true,measure:forceMeasure=false}={}) {
-    // Interactive callers submit without a CPU/GPU round-trip every frame.
-    // Bound latency and memory: never queue an unbounded backlog of frames.
-    if(!wait&&this.pendingFrames>=2) return null;
+    // Real completion notifications can lag finished GPU work by 100 ms.
+    // Admit only a finite window of useful frames; never retire by a timer.
     // A timing belongs to its workload, not indefinitely to this device. Mode
     // switches and presentation resizes invalidate old samples without adding
     // per-frame objects or relying on a user-agent name.
@@ -195,8 +208,18 @@ export class KerrRenderer {
     if(variant!==this.timingVariant||this.canvas.width!==this.timingCanvasWidth||this.canvas.height!==this.timingCanvasHeight) {
       this.resetTiming();this.timingVariant=variant;this.timingCanvasWidth=this.canvas.width;this.timingCanvasHeight=this.canvas.height;
     }
+    const admissionTime=performance.now();
+    const cost=this.gpuTiming&&admissionTime-this.gpuTiming.at<2000?this.gpuTiming.ms:0;
+    let ticket=this.frameWindow.tryAcquire({now:admissionTime,gpuMS:cost});
+    while(ticket===null) {
+      if(!wait)return null;
+      await Promise.race(this.frameCompletions);
+      ticket=this.frameWindow.tryAcquire({now:performance.now(),gpuMS:cost});
+    }
     const generation=this.timingGeneration;
-    const start=performance.now(),measure=!!this.queries&&!this.queryBusy&&(forceMeasure||this.frame%30===0);
+    const start=performance.now(),measure=!!this.queries&&!this.queryBusy&&this.timingHealth.shouldMeasure(start)&&(forceMeasure||this.frame%30===0);
+    let mapping;
+    try {
     const pose=this.geometryPose;
     const uniforms=this.uniforms(timeSeconds);
     if(pose) {const view=this.uniformView;view.setFloat32(44,pose.distance,true);view.setFloat32(48,pose.fov,true);}
@@ -214,41 +237,55 @@ export class KerrRenderer {
     // Encoding is synchronous; acquire only after a successful submission so
     // a rejected encoder cannot permanently reserve the timestamp buffer.
     if(measure)this.queryBusy=true;
+    // Request mapping immediately after submission. Waiting for a completion
+    // callback first adds a second driver/browser polling interval on Gecko.
+    // Capture rejection now; optional instrumentation must not stop rendering.
+    mapping=measure?Promise.resolve().then(()=>this.queryRead.mapAsync(GPUMapMode.READ))
+      .then(()=>({ok:true}),error=>({ok:false,error})):null;
+    } catch(error) {this.frameWindow.release(ticket);throw error;}
     const submissionMS=performance.now()-start;
     const completion=this.device.queue.onSubmittedWorkDone().then(async()=>{
+      this.frameWindow.release(ticket);
       this.pendingFrames--;const completedAt=performance.now(),elapsed=completedAt-start;this.timingSerial++;
       if(generation===this.timingGeneration) {
         this.queueMS=this.queueMS?this.queueMS*.8+elapsed*.2:elapsed;
-        if(this.completionWindowStart===null)this.completionWindowStart=completedAt;
-        else {
-          this.completionWindowCount++;
-          const duration=completedAt-this.completionWindowStart;
-          if(duration>=100&&this.completionWindowCount>=8) {
-            this.completionTiming={ms:duration/this.completionWindowCount,at:completedAt,generation,samples:this.completionWindowCount};
-            this.completionWindowStart=completedAt;this.completionWindowCount=0;
-          }
-        }
+        const cadence=this.completionCadence.record({at:completedAt,generation});
+        if(cadence)this.completionTiming=cadence;
       }
       if(measure) {
         try {
-          await this.queryRead.mapAsync(GPUMapMode.READ);
+          const mapped=await mapping;
+          if(!mapped.ok)throw mapped.error;
           const stamps=new BigUint64Array(this.queryRead.getMappedRange());
           if(generation===this.timingGeneration) {
-            this.emissionMS=Number(stamps[1]-stamps[0])/1e6;
-            this.presentationMS=Number(stamps[3]-stamps[2])/1e6;
-            this.gpuMS=Number(stamps[3]-stamps[0])/1e6;
+            const sample=this.timingHealth.record(stamps,{wallMS:elapsed,now:performance.now()});
+            this.emissionMS=sample.valid?sample.emissionMS:0;
+            this.presentationMS=sample.valid?sample.presentationMS:0;
+            this.gpuMS=sample.valid?sample.gpuMS:0;
             // Smooth timestamp jitter only within one unchanged workload.
             // The HUD keeps the raw span; adaptation avoids retracing a large
             // map in response to one noisy timestamp. resetTiming clears it.
             const previous=this.gpuTiming;
             const stableMS=previous?.generation===generation ? previous.ms*.65+this.gpuMS*.35 : this.gpuMS;
-            this.gpuTiming=Number.isFinite(this.gpuMS)&&this.gpuMS>0
+            this.gpuTiming=sample.valid
               ? {ms:stableMS,at:completedAt,generation} : null;
+          }
+        } catch {
+          this.timingHealth.failure('readback-failed',performance.now());
+          if(generation===this.timingGeneration) {
+            this.gpuTiming=null;this.gpuMS=0;this.emissionMS=0;this.presentationMS=0;
           }
         } finally {this.queryRead.unmap();this.queryBusy=false;}
       }
       return elapsed;
-    },error=>{this.pendingFrames--;if(measure) this.queryBusy=false;throw error;});
+    },async error=>{
+      this.frameWindow.release(ticket);this.pendingFrames--;
+      if(measure) {await mapping;this.queryRead.unmap();this.queryBusy=false;}
+      throw error;
+    });
+    this.frameCompletions.add(completion);
+    const retire=()=>this.frameCompletions.delete(completion);
+    completion.then(retire,retire);
     if(wait) return completion;
     completion.catch(error=>this.onError?.(error));
     return submissionMS;

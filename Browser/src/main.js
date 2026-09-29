@@ -1,5 +1,5 @@
 import {KerrRenderer,defaults,modes} from './renderer.js';
-import {chooseRenderSize,adaptiveResolutionScale,adaptiveTiming,AdaptiveRetracePolicy,advanceDeadline} from './quality.js';
+import {chooseRenderSize,adaptiveResolutionScale,adaptiveTiming,AdaptiveRetracePolicy,advanceDeadline,nextCalibrationPixels} from './quality.js';
 import {runtimeInfo} from './diagnostics.js';
 
 const $=id=>document.getElementById(id), canvas=$('universe');
@@ -180,9 +180,10 @@ function updateHUD(now) {
   if(now-lastHUD<500)return;
   fps=frames*1000/(now-lastHUD);frames=0;lastHUD=now;
   const mode=modes[s.quality],info=renderer.adapter.info??{};
-  $('device').textContent=info.description||[info.vendor,info.architecture].filter(Boolean).join(' · ')||'WebGPU hardware adapter';
+  $('device').textContent=`WebGPU · ${info.description||[info.vendor,info.architecture].filter(Boolean).join(' · ')||'hardware adapter'}`;
   $('resolution').textContent=`${renderer.width} × ${renderer.height} · ${renderer.samples} rays/pixel · ${s.quality==='interactive'?'Motion first':s.quality}`;
-  $('timing').textContent=`${fps.toFixed(0)} FPS · ${renderer.queries?renderer.gpuMS.toFixed(2)+' ms GPU':renderer.queueMS.toFixed(2)+' ms queue (estimated)'}`;
+  const validGPU=renderer.gpuTiming&&now-renderer.gpuTiming.at<2000;
+  $('timing').textContent=`${fps.toFixed(0)} FPS · ${validGPU?renderer.gpuMS.toFixed(2)+' ms GPU':'GPU timing unavailable'}`;
   $('workload').textContent=`${(renderer.width*renderer.height*renderer.samples/1e6).toFixed(2)} M cached rays · last trace ${renderer.traceMS.toFixed(0)} ms · maps ${renderer.traceCount}`;
   $('physical').textContent=`a/M ${s.spin.toFixed(3)} · M ${(s.mass/1e8).toFixed(1)} × 10⁸ M☉ · ISCO ${renderer.meta[0].toFixed(3)} M`;
   $('numerical').textContent=`ε ${mode.tolerance.toExponential(0)} · ≤${mode.steps} steps · ${s.playback.toLocaleString()}× clock`;
@@ -265,9 +266,25 @@ async function start() {
   const probe=chooseRenderSize({...viewport,mode:{samples:1,pixels:32768,minimumPixels:32768},
     maxStorageBytes:renderer.device.limits.maxStorageBufferBindingSize,maxTextureDimension:renderer.device.limits.maxTextureDimension2D});
   await renderer.rebuild(probe.width,probe.height,1);if(stopped)return;
+  calibrationRate=renderer.raysPerMS;
+  renderer.calibration={samples:[{width:probe.width,height:probe.height,rays:probe.width*probe.height,wallMS:renderer.traceMS}],raysPerMS:calibrationRate};
+  // A tiny cold probe can be almost entirely browser notification latency.
+  // Grow bounded useful ray maps before freezing the stationary sizing baseline.
+  // Weak adapters do not escalate, and no guessed delay is subtracted.
+  if(!modes[s.quality].lite) for(let stage=0;stage<2;stage++) {
+    const pixels=nextCalibrationPixels(renderer.width*renderer.height,renderer.traceMS);
+    if(!pixels)break;
+    const warm=chooseRenderSize({...viewport,mode:{samples:1,pixels,minimumPixels:pixels},
+      maxStorageBytes:renderer.device.limits.maxStorageBufferBindingSize,maxTextureDimension:renderer.device.limits.maxTextureDimension2D});
+    if(warm.width*warm.height<renderer.width*renderer.height*1.5)break;
+    renderer.status('Measuring warmed GPU throughput…');
+    await renderer.rebuild(warm.width,warm.height,1);if(stopped)return;
+    calibrationRate=Math.max(calibrationRate,renderer.raysPerMS);
+    renderer.calibration.samples.push({width:warm.width,height:warm.height,rays:warm.width*warm.height,wallMS:renderer.traceMS});
+  }
+  renderer.calibration.raysPerMS=calibrationRate;
   if(modes[s.quality].lite) presentSize(probe);
   await renderer.render(0);if(stopped)return;
-  calibrationRate=renderer.raysPerMS;
   $('loading').hidden=true;
   if(testing) {
     try {const response=await fetch('./build.json');if(response.ok)buildIdentity=await response.json();} catch {}
